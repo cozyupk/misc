@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<LangVersion>9.0</LangVersion>
+		<OutputType>Library</OutputType>
+		<RootNamespace>Docodemo</RootNamespace>
+		<AssemblyName>Docodemo</AssemblyName>
+	</PropertyGroup>
+
+</Project>
