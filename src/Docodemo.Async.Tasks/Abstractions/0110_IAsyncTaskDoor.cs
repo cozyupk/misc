@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Docodemo
+namespace Docodemo.Async.Tasks.Abstractions
 {
-    public interface IAsyncDoor
+    public interface IAsyncTaskDoor
     {
         /// <summary>
         /// Runs a collection of asynchronous tasks and returns their results and exceptions if any occurred.

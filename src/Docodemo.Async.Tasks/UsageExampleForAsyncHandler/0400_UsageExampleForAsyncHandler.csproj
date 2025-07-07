@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>.NET8.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>Docodemo.Async.Tasks.UsageExampleForAsyncHandler</RootNamespace>
+		<AssemblyName>Docodemo.Async.Tasks.UsageExampleForAsyncHandler</AssemblyName>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Extensions\0200_Extensions.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Docodemo.Async.Tasks.Abstractions;
+using Docodemo.Async.Tasks.Extentions;
 
 namespace Docodemo.Async.UsageExampleForAwaitActions
 {
@@ -46,7 +48,7 @@ namespace Docodemo.Async.UsageExampleForAwaitActions
             // Prepare new awaiter instance.
 #pragma warning disable IDE0079 // Remove unnecessary suppression
 #pragma warning disable CA1859 // Use concrete types where possible to improve performance
-            IAsyncDoor awaiter = new AsyncDoor();
+            IAsyncTaskDoor awaiter = new AsyncTaskDoor();
 #pragma warning restore CA1859 // Use concrete types where possible to improve performance
 #pragma warning restore IDE0079 // Remove unnecessary suppression
 

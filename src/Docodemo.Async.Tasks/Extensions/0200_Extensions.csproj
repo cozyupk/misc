@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<LangVersion>9.0</LangVersion>
+		<OutputType>Library</OutputType>
+		<RootNamespace>Docodemo.Async.Task.Extentions</RootNamespace>
+		<AssemblyName>Docodemo.Async.Task.Extensions</AssemblyName>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Abstractions\0100_Abstractions.csproj" />
+	</ItemGroup>
+
+</Project>

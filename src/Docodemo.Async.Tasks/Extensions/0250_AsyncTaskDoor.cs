@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Docodemo.Async.Tasks.Abstractions;
 
-namespace Docodemo
+namespace Docodemo.Async.Tasks.Extentions
 {
     /// <summary>
     /// Provides methods to wait for the completion of multiple asynchronous tasks synchronously.
     /// </summary>
-    public class AsyncDoor : IAsyncDoor
+    public class AsyncTaskDoor : IAsyncTaskDoor
     {
         /// <summary>
         /// Indicates whether the door is blocked until all tasks are completed.
@@ -22,10 +23,14 @@ namespace Docodemo
         /// </summary>
         protected TimeSpan? DefaultTimeout { get; }
 
+        public AsyncTaskDoor()
+        {
+        }
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="AsyncDoor"/> class with an optional default timeout.
+        /// Initializes a new instance of the <see cref="AsyncTaskDoor"/> class with an optional default timeout.
         /// </summary>
-        public AsyncDoor(bool isBlocking = true, TimeSpan? defaultTimeout = null)
+        public AsyncTaskDoor(bool isBlocking = true, TimeSpan? defaultTimeout = null)
         {
             // Set the blocking behavior of the door
             IsBlocking = isBlocking;
@@ -85,38 +90,6 @@ namespace Docodemo
         }
 
         /// <summary>
-        /// Represents the context for an investigation, including cancellation token and semaphore for task completion.
-        /// </summary>
-        internal interface IInvestigationContext<T> : IDisposable
-        {
-            /// <summary>
-            /// A queue to store results of the tasks.
-            /// </summary>
-            ConcurrentQueue<T> Results { get; }
-
-            /// <summary>
-            /// A queue to store exceptions that occurred during the investigation.
-            /// </summary>
-            ConcurrentQueue<AggregateException> Exceptions { get; }
-
-            /// <summary>
-            /// A semaphore that is used to block the investigation until all tasks are completed.
-            /// </summary>
-            SemaphoreSlim? Semaphore { get; set; }
-
-            /// <summary>
-            /// A cancellation token that can be used to cancel the investigation.
-            /// </summary>
-            CancellationToken CancellationToken { get; }
-
-            /// <summary>
-            /// Decrements the number of tasks left to be processed and returns the new count.
-            /// Note: this method should thread-safe.
-            /// </summary>
-            int DecrementNumLeftTasks();
-        }
-
-        /// <summary>
         /// Runs a collection of asynchronous tasks with cancellation support and returns their results and exceptions if any occurred.
         /// </summary>
         public (IEnumerable<T> Results, IEnumerable<AggregateException>? Exceptions) 
@@ -127,7 +100,7 @@ namespace Docodemo
                 ?? throw new ArgumentNullException(nameof(asyncTasks));
 
             // Prepare to run tasks synchronously
-            using IInvestigationContext<T> context = new InvestigationContext<T>(ct, IsBlocking, numTasks);
+            using IAsyncTaskDoorContext<T> context = new AsyncTaskDoorContext<T>(ct, IsBlocking, numTasks);
             var exceptions = context.Exceptions;
             var semaphore = context.Semaphore;
             var results = context.Results;
@@ -233,9 +206,8 @@ namespace Docodemo
 
         /// <summary>
         /// Called when all tasks have completed.
-        /// Note: This method is never called if the door is not blocking mode.
         /// </summary>
-        public virtual void OnAllTaskProcessed<T>(IEnumerable<T> results, IEnumerable<AggregateException> exceptions)
+        public virtual void OnAllTasksProcessed<T>(IEnumerable<T> results, IEnumerable<AggregateException> exceptions)
         {
             // This method can be overridden to perform actions after all tasks have completed.
             // By default, it does nothing.
@@ -286,76 +258,11 @@ namespace Docodemo
         }
 
         /// <summary>
-        /// Represents the context for an investigation, including cancellation token and semaphore for task completion.
-        /// </summary>
-        internal class InvestigationContext<T> : IInvestigationContext<T>
-        {
-            /// <summary>
-            /// A queue to store results of the tasks.
-            /// </summary>
-            public ConcurrentQueue<T> Results { get; } = new();
-
-            /// <summary>
-            /// A queue to store exceptions that occurred during the investigation.
-            /// </summary>
-            public ConcurrentQueue<AggregateException> Exceptions { get; } = new();
-
-            /// <summary>
-            /// A semaphore that is used to block the investigation until all tasks are completed.
-            /// </summary>
-            public SemaphoreSlim? Semaphore { get; set; }
-
-            /// <summary>
-            /// A cancellation token that can be used to cancel the investigation.
-            /// </summary>
-            public CancellationToken CancellationToken { get; }
-
-            /// <summary>
-            /// Decrements the number of tasks left to be processed and returns the new count.
-            /// </summary>
-            public int DecrementNumLeftTasks()
-            {
-                return Interlocked.Decrement(ref NumLeftTasks);
-            }
-
-            /// <summary>
-            /// The number of tasks that are still left to be processed.
-            /// Note: We use field insted of property to use Interlocked operations for thread safety.
-            /// </summary>
-            private int NumLeftTasks;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="InvestigationContext"/> class.
-            /// </summary>
-            public InvestigationContext(CancellationToken ct, bool IsBlocking, int numTasks)
-            {
-                // store the cancellation token
-                CancellationToken = ct;
-                // store the number of tasks
-                NumLeftTasks = numTasks;
-                // If the door is blocking, we create a semaphore to wait for all tasks to complete.
-                if (IsBlocking)
-                {
-                    Semaphore = new(0, numTasks);
-                }
-            }
-
-            /// <summary>
-            /// Disposes the semaphore if it is not null.
-            /// </summary>
-            public void Dispose()
-            {
-                Semaphore?.Dispose();
-                Semaphore = null;
-            }
-        }
-
-        /// <summary>
         /// Safely fires an asynchronous task and collects its result or exception.
         /// </summary>
         private void SafeFireAndCollectResult<T>(
             Func<CancellationToken, Task<T>> task,
-            IInvestigationContext<T> context
+            IAsyncTaskDoorContext<T> context
         )
         {
             // This method is responsible for firing the task and collecting its result or exception.
@@ -371,7 +278,7 @@ namespace Docodemo
                 }
 
                 // Fire the task and continue processing its result or exception
-                task(ct).ContinueWith((Task<T> taskResult) => 
+                task(ct).ContinueWith((taskResult) => 
                                     {
                                         // This continuation is called when the task completes.
                                         PostProcessTask(
@@ -379,9 +286,9 @@ namespace Docodemo
                                         );
                                         // Atomically decrement the number of remaining tasks.
                                         // If this is the last task, invoke the final callback.
-                                        if (context.DecrementNumLeftTasks() == 0 && context.Semaphore != null)
+                                        if (context.DecrementNumLeftTasks() == 0)
                                         {
-                                            OnAllTaskProcessed(
+                                            OnAllTasksProcessed(
                                                 context.Results.ToList(),
                                                 context.Exceptions.ToArray()
                                             );
@@ -402,7 +309,7 @@ namespace Docodemo
         /// Processes the completed task, handling its result or exception.
         /// </summary>
         private void PostProcessTask<T>(
-            Task<T> task, IInvestigationContext<T> context
+            Task<T> task, IAsyncTaskDoorContext<T> context
 
         ) {
             // This method is called when the task completes.

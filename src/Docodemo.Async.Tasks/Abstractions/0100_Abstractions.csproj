@@ -5,8 +5,8 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>9.0</LangVersion>
 		<OutputType>Library</OutputType>
-		<RootNamespace>Docodemo</RootNamespace>
-		<AssemblyName>Docodemo</AssemblyName>
+		<RootNamespace>Docodemo.Async.Task.Abstractions</RootNamespace>
+		<AssemblyName>Docodemo.Async.Task.Abstractions</AssemblyName>
 	</PropertyGroup>
 
 </Project>
