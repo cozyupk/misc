@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0500_UsageExampleForAsyncHa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0600_UsageExampleForAsyncRunner", "src\Docodemo.Async.Tasks\UsageExampleForAsyncRunner\0600_UsageExampleForAsyncRunner.csproj", "{6343C843-A53F-C99E-0A26-73B5907910A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0200_DefaultDoor", "src\Docodemo.Async.Tasks\DefaultDoor\0200_DefaultDoor.csproj", "{A295AEAE-04E9-4F7B-AD36-22E5B330CE0E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0200_DefaultRunner", "src\Docodemo.Async.Tasks\DefaultDoor\0200_DefaultRunner.csproj", "{A295AEAE-04E9-4F7B-AD36-22E5B330CE0E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

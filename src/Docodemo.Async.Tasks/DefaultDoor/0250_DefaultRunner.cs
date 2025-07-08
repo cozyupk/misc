@@ -1,39 +1,37 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Docodemo.Async.Tasks.Abstractions;
 
-namespace Docodemo.Async.Tasks.DefaultDoor
+namespace Docodemo.Async.Tasks.DefaultRunner
 {
     /// <summary>
     /// Provides methods to wait for the completion of multiple asynchronous tasks synchronously.
     /// </summary>
-    public class DefaultAsyncTaskDoor : IAsyncTaskDoor
+    public class DefaultRunner : IRunner
     {
         public (IEnumerable<TResult> Results, IEnumerable<AggregateException>? Exceptions) Invoke<TResult>(
-            IAsyncTaskDoorRunnerContext<TResult> context,
+            IRunnerContext<TResult> context,
             bool isBlockingMode,
             params Func<CancellationToken, Task<TResult>>[] asyncTasks)
         {
             // Validate asyncTasks parameter and count number of tasks
             var numTasks = asyncTasks?.Length
                 ?? throw new ArgumentNullException(nameof(asyncTasks));
-            context.SetNumLeftTasks(numTasks);
 
             // Treat the case of blocking mode
+            SemaphoreSlim? semaphoreForEachTask = null;
             if (isBlockingMode)
             {
                 // If blocking mode is enabled, we need to create a semaphore
                 // to block the current thread until all tasks are completed.
-                context.Semaphore = new SemaphoreSlim(0, numTasks);
+                semaphoreForEachTask= new SemaphoreSlim(0, numTasks);
             }
 
             // Prepare to run tasks synchronously
             var exceptions = context.Exceptions;
-            var semaphore = context.Semaphore;
             var results = context.Results;
 
             // Let each of the tasks go
@@ -42,30 +40,70 @@ namespace Docodemo.Async.Tasks.DefaultDoor
                 try
                 {
                     // Let the tasks go and collect its result or exception
-                    SafeLetItGoAndCollectResult(task, context);
+                    ScheduleAndTrackAsyncTask(task, semaphoreForEachTask, context);
                 }
                 catch (Exception ex)
                 {
                     // If an exception occurs while creating the task, we enqueue it
-                    // Note: This is a defensive check, as SafeLetItGoAndCollectResult should handle all exceptions.
+                    // Note: This is a defensive check, as ScheduleAndTrackAsyncTask should handle all exceptions.
                     exceptions.Enqueue(new AggregateException(ex));
-                    semaphore?.Release();
+                    semaphoreForEachTask?.Release();
                 }
             }
 
             // If blocking is enabled, we need to wait for all tasks to complete
-            if (semaphore != null)
+            if (semaphoreForEachTask != null)
             {
                 // Wait for all async state machines to complete and release the semaphore
                 for (int i = 0; i < numTasks; i++)
                 {
-                    WaitSemaphore(semaphore);
+                    WaitSemaphore(semaphoreForEachTask, context.CancellationToken);
                 }
+            }
+
+            // Get snapshot of results and exceptions
+            var resultsSnapshot = results.ToArray();
+            var exceptionsSnapshot = exceptions.ToArray();
+            var hasExceptions = exceptionsSnapshot.Length > 0;
+            exceptionsSnapshot = hasExceptions
+                ? exceptionsSnapshot
+                : null; // If no exceptions, set to null for clarity
+
+            // Finally, we need to call and wait for the OnAllTasksProcessedAsync method, if it is defined.
+            var semaphoreForFinalization = context.OnAllTasksProcessedAsync;
+            if (semaphoreForFinalization != null)
+            {
+                // Using a semaphore to emulate await-style continuation and ensure the current thread waits
+                // for the async callback to finish, without relying on GetAwaiter().GetResult().
+                var semaphoreForAllTasksProcessedAsync = new SemaphoreSlim(0, 1);
+                Task.CompletedTask.ContinueWith(async t =>
+                {
+                    try
+                    {
+                        // Call the OnAllTasksProcessedAsync method to process the results and exceptions
+                        await semaphoreForFinalization(resultsSnapshot, exceptionsSnapshot, context.CancellationToken)
+                            .ContinueWith(_ => semaphoreForAllTasksProcessedAsync.Release(), context.CancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Sorry, we cannot enqueue exceptions here, so re-throw it to the caller.
+                        throw new AggregateException(
+                            "Unhandled exception occurred during post-processing of task result.",
+                            ex
+                        );
+                    }
+                    finally
+                    {
+                        // Release the semaphore to signal that all tasks have been processed.
+                        semaphoreForAllTasksProcessedAsync.Release();
+                    }
+                }, context.CancellationToken, context.TaskContinuationOptions, context.TaskScheduler);
+                semaphoreForAllTasksProcessedAsync.WaitAsync(context.CancellationToken).GetAwaiter().GetResult();
             }
 
             // Return results and any exceptions that occurred
             // Note: return Enumerable snapshot of results and exceptions to avoid issues with concurrent modifications.
-            return (results.ToArray(), exceptions.Any() ? exceptions.ToArray() : null);
+            return (resultsSnapshot, exceptionsSnapshot);
         }
 
         /// <summary>
@@ -98,46 +136,28 @@ namespace Docodemo.Async.Tasks.DefaultDoor
             // By default, it simply enqueues the exception.
             // This method can also be used just as a hook of the exception occurrence,
             // in that case, please don't forget to call base.EnqueueAggregateException(exceptions, ex).
+
+            // The policy for flattening nested exceptions is currently under review.
             exceptions.Enqueue(ex);
         }
 
         /// <summary>
         /// Waits for the semaphore to be released.
         /// </summary>
-        protected virtual void WaitSemaphore(SemaphoreSlim semaphore)
+        protected virtual void WaitSemaphore(SemaphoreSlim semaphore, CancellationToken ct)
         {
             // This method can be overridden to customize how the semaphore is waited on.
             // By default, it simply waits for the semaphore to be released. (ex. use timeout, etc.)
-            semaphore.Wait();
-        }
-
-        /// <summary>
-        /// Gets the task continuation options for the tasks being awaited.
-        /// </summary>
-        protected virtual TaskContinuationOptions GetTaskContinuationOptions()
-        {
-            // This property can be overridden to customize the task continuation options.
-            // By default, it uses the default options.
-            return TaskContinuationOptions.None;
-        }
-
-        /// <summary>
-        /// Sceheduler used for continuations of the tasks being awaited.
-        /// </summary>
-        /// <returns></returns>
-        protected virtual TaskScheduler GetTaskScheduler()
-        {
-            // This property can be overridden to customize the task scheduler used for continuations.
-            // By default, it uses the default task scheduler.
-            return TaskScheduler.Default;
+            semaphore.WaitAsync(ct).GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// Safely let an asynchronous task go and collects its result or exception.
         /// </summary>
-        private void SafeLetItGoAndCollectResult<T>(
+        private void ScheduleAndTrackAsyncTask<T>(
             Func<CancellationToken, Task<T>> task,
-            IAsyncTaskDoorRunnerContext<T> context
+            SemaphoreSlim? semaphoreForEachTask,
+            IRunnerContext<T> context
         )
         {
             // This method is responsible for firing the task and collecting its result or exception.
@@ -153,39 +173,49 @@ namespace Docodemo.Async.Tasks.DefaultDoor
                 }
 
                 // Let the task go and continue processing its result or exception
-                task(ct).ContinueWith((taskResult) => 
+                _ = task(ct).ContinueWith(async (taskResult) =>
                                     {
-                                        // This continuation is called when the task completes.
-                                        PostProcessTask(
-                                            taskResult, context
-                                        );
-                                        // Atomically decrement the number of remaining tasks.
-                                        // If this is the last task, invoke the final callback.
-                                        if (context.DecrementNumLeftTasks() == 0)
+                                        try
                                         {
-                                            OnAllTasksProcessed(
-                                                context.Results.ToList(),
-                                                context.Exceptions.ToArray()
+                                            // This continuation is called when the task completes.
+                                            await RunPostProcessTaskAsync(
+                                                taskResult, context
                                             );
                                         }
+                                        catch (Exception ex)
+                                        {
+                                            // If an exception occurs while processing the task, we enqueue it
+                                            // and release the semaphore to avoid deadlocks.
+                                            EnqueueAggregateException(
+                                                context.Exceptions,
+                                                new AggregateException(
+                                                    // TODO: Adjust message based on the ContextBuilder
+                                                    "Exception thrown while processing postProcessTask", 
+                                                    ex
+                                                )
+                                            );
+                                        } finally
+                                        {
+                                            semaphoreForEachTask?.Release();
+                                        }
                                     },
-                                    ct, GetTaskContinuationOptions(), GetTaskScheduler());
+                                    ct,
+                                    context.TaskContinuationOptions,
+                                    context.TaskScheduler);
             }
             catch (Exception ex)
             {
                 // If an exception occurs while creating the task, we enqueue it
                 EnqueueAggregateException(context.Exceptions, new AggregateException(ex));
-                context.Semaphore?.Release();
-                return;
+                semaphoreForEachTask?.Release();
             }
         }
 
         /// <summary>
         /// Processes the completed task, handling its result or exception.
         /// </summary>
-        private void PostProcessTask<T>(
-            Task<T> task, IAsyncTaskDoorRunnerContext<T> context
-
+        private Task RunPostProcessTaskAsync<T>(
+            Task<T> task, IRunnerContext<T> context
         ) {
             // This method is called when the task completes.
             try
@@ -214,6 +244,7 @@ namespace Docodemo.Async.Tasks.DefaultDoor
                 else if (task.Status == TaskStatus.RanToCompletion)
                 {
                     // If the task completed successfully, we process its result
+                    // Note: We assume that the task has a result of type T, so if T is nullable, task.Result can be null.
                     var result = TransformResult(task.Result);
 
                     // Check the consistency of the result with the type T
@@ -243,15 +274,11 @@ namespace Docodemo.Async.Tasks.DefaultDoor
 
                 // and release the semaphore to avoid deadlocks.
                 EnqueueAggregateException(context.Exceptions, new AggregateException(ex));
-            } 
-            finally
-            {
-                // Release the semaphore to signal that this task has finished processing.
-                // This applies whether the task completed successfully or an exception was caught and enqueued.
-                // If an exception escapes this method, it may cause deadlocks in blocking mode.
-                // Always ensure the semaphore is released in all code paths.
-                context.Semaphore?.Release();
             }
+
+            // Placeholder implementation: no actual asynchronous logic is run here yet.
+            // Intended to be replaced by a context-driven async hook in future extensions.
+            return Task.CompletedTask;
         }
 
         /// <summary>

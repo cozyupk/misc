@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Docodemo.Async.Tasks.Abstractions;
 using Docodemo.Async.Tasks.Extentions;
 
 namespace Docodemo.Async.Tasks.UsageExampleForAsyncHandler
@@ -45,13 +45,6 @@ namespace Docodemo.Async.Tasks.UsageExampleForAsyncHandler
         /// </summary>
         static void Main(string[] _)
         {
-            // Prepare new awaiter instance.
-#pragma warning disable IDE0079 // Remove unnecessary suppression
-#pragma warning disable CA1859 // Use concrete types where possible to improve performance
-            IAsyncTaskDoor awaiter = new DefaultAsyncTaskDoor();
-#pragma warning restore CA1859 // Use concrete types where possible to improve performance
-#pragma warning restore IDE0079 // Remove unnecessary suppression
-
             // Define an async tasks.
             async Task ExampleAsyncTaskA()
             {
@@ -95,29 +88,41 @@ namespace Docodemo.Async.Tasks.UsageExampleForAsyncHandler
                 throw new InvalidOperationException("This is a test exception from sync task E.");
             }
 
-            // Await for the all tasks above to complete.
-            var exceptions = awaiter.Explore(
-                ExampleAsyncTaskA, ExampleAsyncTaskB, ExampleTaskC,
-                ExampleAsyncTaskD, ExampleTaskE
-            );
-
-            if (exceptions != null)
+            // This method is called when all tasks have been processed.
+            void OnAllTasksProcessed(
+                    IEnumerable<AggregateException>? exceptions
+            )
             {
-                Console.WriteLine("");
-                Console.WriteLine("FYI: The following exceptions occurred:");
-                foreach (var ex in exceptions)
+                if (exceptions != null)
                 {
-                    Console.WriteLine();
-                    Console.WriteLine(ex.Message);
-                    foreach (var innerEx in ex.InnerExceptions)
+                    Console.WriteLine("");
+                    Console.WriteLine("FYI: The following exceptions occurred:");
+                    foreach (var ex in exceptions)
                     {
-                        Console.WriteLine($"  Inner Exception: {innerEx.Message}");
-                        Console.WriteLine("--- Begin Stack Trace ---");
-                        Console.WriteLine(innerEx.StackTrace);
-                        Console.WriteLine("--- End Stack Trace ---");
+                        Console.WriteLine();
+                        Console.WriteLine(ex.Message);
+                        foreach (var innerEx in ex.InnerExceptions)
+                        {
+                            Console.WriteLine($"  Inner Exception: {innerEx.Message}");
+                            Console.WriteLine("--- Begin Stack Trace ---");
+                            Console.WriteLine(innerEx.StackTrace);
+                            Console.WriteLine("--- End Stack Trace ---");
+                        }
                     }
                 }
             }
+
+            // Await for the all tasks above to complete.
+            var taskActions = new Func<Task>[] {
+                    ExampleAsyncTaskA,
+                    ExampleAsyncTaskB,
+                    ExampleTaskC,
+                    ExampleAsyncTaskD,
+                    ExampleTaskE
+            };
+            taskActions.ToAsyncHandler(
+                OnAllTasksProcessed
+            ).ShallWeGo();
 
             // Care the stopwatch.
             Sw.Value.Stop();

@@ -4,19 +4,19 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Docodemo.Async.Tasks.Abstractions;
-using Docodemo.Async.Tasks.DefaultDoor;
+using Docodemo.Async.Tasks.DefaultRunner;
 
 namespace Docodemo.Async.Tasks.Extentions
 {
     /// <summary>
     /// Represents a base class for building an asynchronous door context for tasks that return a result of type <typeparamref name="TResult"/>.
     /// </summary>
-    public class AsyncTaskDoorContextBuilderBase<TResult>
+    public class ContextBuilder<TResult>
     {
         /// <summary>
         /// Represents the context for the asynchronous door, including cancellation token, semaphore for task completion and so on.
         /// </summary>
-        protected IAsyncTaskDoorBuilderContext<TResult>? Context { get; private set; }
+        protected IBuilderContext<TResult>? Context { get; private set; }
 
         /// <summary>
         /// Represents a lock object to ensure thread safety when accessing the context.
@@ -34,36 +34,51 @@ namespace Docodemo.Async.Tasks.Extentions
         protected IEnumerable<Func<CancellationToken, Task<TResult>>> Tasks { get; }
 
         /// <summary>
-        /// Callback that is invoked when all tasks have been processed.
-        /// </summary>
-        protected Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, Task>? OnAllTasksProcessedAsync { get; }
-
-        /// <summary>
         /// Creates the initial context for the tasks, including cancellation token and semaphore for task completion.
         /// </summary>
-        protected IAsyncTaskDoorBuilderContext<TResult> CreateInitialContext<TAsyncTaskDoorContext>()
-            where TAsyncTaskDoorContext : IAsyncTaskDoorBuilderContext<TResult>, new()
+        protected IBuilderContext<TResult> CreateInitialContext<TAsyncTaskDoorContext>()
+            where TAsyncTaskDoorContext : IBuilderContext<TResult>, new()
         {
             // Create the context for the tasks
             return new TAsyncTaskDoorContext();
         }
 
         /// <summary>
-        /// Creates the initial context for the tasks using the default implementation of <see cref="IAsyncTaskDoorRunnerContext{TResult}"/>.
+        /// Creates the initial context for the tasks using the default implementation of <see cref="IRunnerContext{TResult}"/>.
         /// </summary>
-        protected virtual IAsyncTaskDoorBuilderContext<TResult> CreateInitialContext()
+        protected virtual IBuilderContext<TResult> CreateInitialContext()
         {
             // Use the default context implementation
-            return CreateInitialContext<DefaultAsyncTaskDoorContext<TResult>>();
+            return CreateInitialContext<DefaultContext<TResult>>();
+        }
+
+        protected void CreateAndInitializaContext(Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, CancellationToken, Task>? asyncTask)
+        {
+            lock (ContextLock)
+            {
+                // Create the context for the tasks
+                Context = CreateInitialContext();
+
+                // Store the callback for when all tasks are processed
+                Context.SetOnAllTasksProcessedAsync(
+                    asyncTask
+                );
+            }
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AsyncTaskDoorContextBuilderBase{TResult}"/> class with a collection of tasks and an optional callback for when all tasks are processed.
+        /// Initializes a new instance of the <see cref="ContextBuilder{TResult}"/> class with a collection of tasks and an optional callback for when all tasks are processed.
         /// </summary>
-        public AsyncTaskDoorContextBuilderBase(IEnumerable<Func<CancellationToken, Task<TResult>>> tasks, Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, Task>? onAllTasksProcessedAsync = null)
+        public ContextBuilder(IEnumerable<Func<CancellationToken, Task<TResult>>> tasks, bool checkEmptyTasks, Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, CancellationToken, Task>? onAllTasksProcessedAsync = null)
         {
             // Store the snapshot of the tasks
             Tasks = tasks?.ToArray() ?? throw new ArgumentNullException(nameof(tasks), "Tasks cannot be null.");
+
+            // Validate the tasks collection if required
+            if (checkEmptyTasks && !Tasks.Any())
+            {
+                throw new ArgumentException("No tasks were provided. You can bypass this check by setting checkEmptyTasks: false.", nameof(tasks));
+            }
 
             // Validate the contents of the tasks
             if (Tasks.Any(task => task == null))
@@ -71,33 +86,27 @@ namespace Docodemo.Async.Tasks.Extentions
                 throw new ArgumentException("Tasks cannot contain null elements.", nameof(tasks));
             }
 
-            // Store the callback for when all tasks are processed
-            OnAllTasksProcessedAsync = onAllTasksProcessedAsync;
-
-            // Create the context for the tasks
-            Context = CreateInitialContext();
+            // Create the context for the tasks and set the callback for when all tasks are processed
+            CreateAndInitializaContext(onAllTasksProcessedAsync);
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AsyncTaskDoorContextBuilderBase{TResult}"/> class with a single task and an optional callback for when all tasks are processed.
+        /// Initializes a new instance of the <see cref="ContextBuilder{TResult}"/> class with a single task and an optional callback for when all tasks are processed.
         /// </summary>
-        public AsyncTaskDoorContextBuilderBase(Func<CancellationToken, Task<TResult>> task, Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, Task>? onAllTasksProcessedAsync = null)
+        public ContextBuilder(Func<CancellationToken, Task<TResult>> task, Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, CancellationToken, Task>? onAllTasksProcessedAsync = null)
         {
             // Validate and store the task
             Tasks = new[] { task ?? throw new ArgumentNullException(nameof(task), "Task cannot be null.") };
 
-            // Store the callback for when all tasks are processed
-            OnAllTasksProcessedAsync = onAllTasksProcessedAsync;
-
-            // Create the context for the tasks
-            Context = CreateInitialContext();
+            // Create the context for the tasks and set the callback for when all tasks are processed
+            CreateAndInitializaContext(onAllTasksProcessedAsync);
         }
 
         /// <summary>
         /// Invokes the asynchronous door to execute all tasks and returns the results and exceptions.
         /// </summary>
         protected (IEnumerable<TResult>, IEnumerable<AggregateException>?) InvokeDoor<TAsyncTaskDoor>(bool isBlockingMode)
-            where TAsyncTaskDoor : IAsyncTaskDoor, new()
+            where TAsyncTaskDoor : IRunner, new()
         {
             // ───── Re-entrant guard ─────
             if (Interlocked.Exchange(ref _isRunning, 1) == 1)
@@ -121,10 +130,10 @@ namespace Docodemo.Async.Tasks.Extentions
                     var asyncDoor = new TAsyncTaskDoor();
 
                     // Cast the context for runner side
-                    if (Context is not IAsyncTaskDoorRunnerContext<TResult> crs)
+                    if (Context is not IRunnerContext<TResult> crs)
                     {
                         throw new InvalidOperationException(
-                            $"The context must implement {nameof(IAsyncTaskDoorRunnerContext<TResult>)} interface.");
+                            $"The context must implement {nameof(IRunnerContext<TResult>)} interface.");
                     }
                     // Execute the tasks and get the results and exceptions
                     (results, exceptions) = asyncDoor.Invoke(crs, isBlockingMode, Tasks.ToArray());
@@ -149,7 +158,7 @@ namespace Docodemo.Async.Tasks.Extentions
         /// If you need to handle results or exceptions, use the OnAllTasksProcessed callback.
         /// </summary>
         protected void LetThemGo<TAsyncTaskDoor>()
-            where TAsyncTaskDoor : IAsyncTaskDoor, new()
+            where TAsyncTaskDoor : IRunner, new()
         {
             lock(ContextLock)
             {
@@ -165,21 +174,22 @@ namespace Docodemo.Async.Tasks.Extentions
         /// </summary>
         public virtual void LetThemGo()
         {
-            LetThemGo<DefaultAsyncTaskDoor>();
+            LetThemGo<DefaultRunner.DefaultRunner>();
         }
     }
 
     /// <summary>
     /// Represents a builder for creating an asynchronous door context for Func<Task> by fluently chaining methods.
     /// </summary>
-    public class AsyncTaskDoorContextBuilder : AsyncTaskDoorContextBuilderBase<object?>
+    public class AsyncTaskDoorContextBuilder : ContextBuilder<object?>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncTaskDoorContextBuilder"/> class with a collection of tasks and an optional callback for when all tasks are processed.
         /// </summary>
-        public AsyncTaskDoorContextBuilder(IEnumerable<Func<CancellationToken, Task>> tasks, Func<IEnumerable<AggregateException>?, Task>? onAllTasksProcessedAsync = null)
+        public AsyncTaskDoorContextBuilder(IEnumerable<Func<CancellationToken, Task>> tasks, bool checkEmptyTasks, Func<IEnumerable<AggregateException>?, CancellationToken, Task>? onAllTasksProcessedAsync = null)
             : base(
                 tasks.Select(WrapTask),
+                checkEmptyTasks,
                 onAllTasksProcessedAsync != null ? IgnoreResultsCallback(onAllTasksProcessedAsync) : null
               )
         {
@@ -189,7 +199,7 @@ namespace Docodemo.Async.Tasks.Extentions
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncTaskDoorContextBuilder"/> class with a single task and an optional callback for when all tasks are processed.
         /// </summary>
-        public AsyncTaskDoorContextBuilder(Func<CancellationToken, Task> task, Func<IEnumerable<AggregateException>?, Task>? onAllTasksProcessedAsync = null)
+        public AsyncTaskDoorContextBuilder(Func<CancellationToken, Task> task, Func<IEnumerable<AggregateException>?, CancellationToken, Task>? onAllTasksProcessedAsync = null)
             : base(
                 WrapTask(task),
                 onAllTasksProcessedAsync != null ? IgnoreResultsCallback(onAllTasksProcessedAsync) : null
@@ -216,9 +226,9 @@ namespace Docodemo.Async.Tasks.Extentions
         /// <summary>
         /// Wraps a Func<Task<TResult>> into a Func<Task<object?>> to allow for uniform handling of results.
         /// </summary>
-        protected static Func<IEnumerable<object?>, IEnumerable<AggregateException>?, Task> IgnoreResultsCallback(Func<IEnumerable<AggregateException>?, Task> callback)
+        protected static Func<IEnumerable<object?>, IEnumerable<AggregateException>?, CancellationToken, Task> IgnoreResultsCallback(Func<IEnumerable<AggregateException>?, CancellationToken, Task> callback)
         {
-            return (_, exceptions) => callback.Invoke(exceptions);
+            return (_, exceptions, ct) => callback.Invoke(exceptions, ct);
         }
 
         /// <summary>
@@ -226,7 +236,7 @@ namespace Docodemo.Async.Tasks.Extentions
         /// Returns the collected exceptions, if any.
         /// </summary>
         protected IEnumerable<AggregateException>? ShallWeGo<TAsyncTaskDoor>()
-            where TAsyncTaskDoor : IAsyncTaskDoor, new()
+            where TAsyncTaskDoor : IRunner, new()
         {
             lock (ContextLock)
             {
@@ -243,20 +253,20 @@ namespace Docodemo.Async.Tasks.Extentions
         /// </summary>
         public virtual IEnumerable<AggregateException>? ShallWeGo()
         {
-            return ShallWeGo<DefaultAsyncTaskDoor>();
+            return ShallWeGo<DefaultRunner.DefaultRunner>();
         }
     }
 
     /// <summary>
     /// Represents a builder for creating an asynchronous door context for Func<Task<typeparamref name="TResult"/>> by fluently chaining methods.
     /// </summary>
-    public class AsyncTaskDoorContextBuilder<TResult> : AsyncTaskDoorContextBuilderBase<TResult>
+    public class AsyncTaskDoorContextBuilder<TResult> : ContextBuilder<TResult>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncTaskDoorContextBuilder{TResult}"/> class with a collection of tasks and an optional callback for when all tasks are processed.
         /// </summary>
-        public AsyncTaskDoorContextBuilder(IEnumerable<Func<CancellationToken, Task<TResult>>> tasks, Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, Task>? onAllTasksProcessedAsync = null)
-            : base(tasks, onAllTasksProcessedAsync)
+        public AsyncTaskDoorContextBuilder(IEnumerable<Func<CancellationToken, Task<TResult>>> tasks, bool checkEmptyTasks, Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, CancellationToken, Task>? onAllTasksProcessedAsync = null)
+            : base(tasks, checkEmptyTasks, onAllTasksProcessedAsync)
         {
             // No additional initialization needed here
         }
@@ -264,7 +274,7 @@ namespace Docodemo.Async.Tasks.Extentions
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncTaskDoorContextBuilder{TResult}"/> class with a single task and an optional callback for when all tasks are processed.
         /// </summary>
-        public AsyncTaskDoorContextBuilder(Func<CancellationToken, Task<TResult>> task, Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, Task>? onAllTasksProcessedAsync = null)
+        public AsyncTaskDoorContextBuilder(Func<CancellationToken, Task<TResult>> task, Func<IEnumerable<TResult>, IEnumerable<AggregateException>?, CancellationToken, Task>? onAllTasksProcessedAsync = null)
             : base(task, onAllTasksProcessedAsync)
         {
             // No additional initialization needed here
@@ -274,7 +284,7 @@ namespace Docodemo.Async.Tasks.Extentions
         /// Blocks the current thread until all tasks are completed, returning the results and exceptions.
         /// </summary>
         protected (IEnumerable<TResult>, IEnumerable<AggregateException>?) ShallWeGo<TAsyncTaskDoor>()
-            where TAsyncTaskDoor : IAsyncTaskDoor, new()
+            where TAsyncTaskDoor : IRunner, new()
         {
             lock (ContextLock)
             {
@@ -290,7 +300,7 @@ namespace Docodemo.Async.Tasks.Extentions
         /// </summary>
         public virtual (IEnumerable<TResult>, IEnumerable<AggregateException>?) ShallWeGo()
         {
-            return ShallWeGo<DefaultAsyncTaskDoor>();
+            return ShallWeGo<DefaultRunner.DefaultRunner>();
         }
     }
 }

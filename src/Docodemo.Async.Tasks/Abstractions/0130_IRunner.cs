@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 
 namespace Docodemo.Async.Tasks.Abstractions
 {
-    public interface IAsyncTaskDoor
+    public interface IRunner
     {
         /// <summary>
         /// Invokes a set of asynchronous tasks and waits for their completion.
         /// </summary>
         (IEnumerable<TResult> Results, IEnumerable<AggregateException>? Exceptions)
-            Invoke<TResult>(IAsyncTaskDoorRunnerContext<TResult> context,
+            Invoke<TResult>(IRunnerContext<TResult> context,
             bool isBlockingMode,
             params Func<CancellationToken, Task<TResult>>[] asyncTasks);
     }

@@ -120,14 +120,14 @@ namespace Docodemo.Async.Tasks.UsageExampleForAsyncHandler
             }
 
             // Await for the all tasks above to complete.
-            var tasks = new List<Func<Task<int>>>() {
-                ExampleAsyncTaskA,
-                ExampleAsyncTaskB,
-                ExampleTaskC,
-                ExampleAsyncTaskD,
-                ExampleTaskE
+            var taskFuncs = new Func<Task<int>>[] {
+                    ExampleAsyncTaskA,
+                    ExampleAsyncTaskB,
+                    ExampleTaskC,
+                    ExampleAsyncTaskD,
+                    ExampleTaskE
             };
-            tasks.ToAsyncHandler(
+            taskFuncs.ToAsyncHandler(
                 OnAllTasksProcessed
             ).ShallWeGo();
 
