@@ -6,117 +6,48 @@ using System.Threading;
 using System.Threading.Tasks;
 using Docodemo.Async.Tasks.Abstractions;
 
-namespace Docodemo.Async.Tasks.Extentions
+namespace Docodemo.Async.Tasks.DefaultDoor
 {
     /// <summary>
     /// Provides methods to wait for the completion of multiple asynchronous tasks synchronously.
     /// </summary>
-    public class AsyncTaskDoor : IAsyncTaskDoor
+    public class DefaultAsyncTaskDoor : IAsyncTaskDoor
     {
-        /// <summary>
-        /// Indicates whether the door is blocked until all tasks are completed.
-        /// </summary>
-        protected bool IsBlocking { get; } = false;
-
-        /// <summary>
-        /// The default timeout for the asynchronous tasks, if specified.
-        /// </summary>
-        protected TimeSpan? DefaultTimeout { get; }
-
-        public AsyncTaskDoor()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AsyncTaskDoor"/> class with an optional default timeout.
-        /// </summary>
-        public AsyncTaskDoor(bool isBlocking = true, TimeSpan? defaultTimeout = null)
-        {
-            // Set the blocking behavior of the door
-            IsBlocking = isBlocking;
-
-            // Initialize the default timeout if provided
-            DefaultTimeout = defaultTimeout;
-        }
-
-        /// <summary>
-        /// Runs a collection of asynchronous tasks and returns their results and exceptions if any occurred.
-        /// </summary>
-        public (IEnumerable<T> Results, IEnumerable<AggregateException>? Exceptions)
-            Investigate<T>(params Func<Task<T>>[] asyncTasks)
-        {
-            // Convert the async tasks to a collection of Func<CancellationToken.
-            Func<CancellationToken, Task<T>>[] converted
-                = asyncTasks.Select<Func<Task<T>>, Func<CancellationToken, Task<T>>>(
-                    f => ct => f()
-                ).ToArray();
-
-            // Call the Investigate method with a default CancellationToken
-            return Investigate(CancellationToken.None, converted);
-        }
-
-        /// <summary>
-        /// Runs a collection of asynchronous tasks. If this instance was constructed with a <see cref="DefaultTimeout"/>, 
-        /// each task will be subject to that timeout via <see cref="CancellationToken"/>.
-        /// </summary>
-        public (IEnumerable<T> Results, IEnumerable<AggregateException>? Exceptions)
-            Investigate<T>(params Func<CancellationToken, Task<T>>[] asyncTasks)
-        {
-            // Check if the DefaultTimeout is set
-            if (DefaultTimeout != null)
-            {
-                // If a DefaultTimeout is specified, use it to create a CancellationTokenSource
-                TimeSpan timeout = DefaultTimeout.Value;
-
-                // Call the Investigate method with the effective timeout
-                return Investigate(timeout, asyncTasks);
-            }
-
-            // Otherwise, call the Investigate method with a default CancellationToken
-            return Investigate(CancellationToken.None, asyncTasks);
-        }
-
-        /// <summary>
-        /// Runs a collection of asynchronous tasks with a specified timeout and returns their results and exceptions if any occurred.
-        /// </summary>
-        public (IEnumerable<T> Results, IEnumerable<AggregateException>? Exceptions)
-            Investigate<T>(TimeSpan timeout, params Func<CancellationToken, Task<T>>[] asyncTasks)
-        {
-            // Create a CancellationTokenSource with the specified timeout
-            CancellationTokenSource cts = new(timeout);
-
-            // Call the Investigate method with the CancellationToken from the source
-            return Investigate(cts.Token, asyncTasks);
-        }
-
-        /// <summary>
-        /// Runs a collection of asynchronous tasks with cancellation support and returns their results and exceptions if any occurred.
-        /// </summary>
-        public (IEnumerable<T> Results, IEnumerable<AggregateException>? Exceptions) 
-            Investigate<T>(CancellationToken ct, params Func<CancellationToken, Task<T>>[] asyncTasks)
+        public (IEnumerable<TResult> Results, IEnumerable<AggregateException>? Exceptions) Invoke<TResult>(
+            IAsyncTaskDoorRunnerContext<TResult> context,
+            bool isBlockingMode,
+            params Func<CancellationToken, Task<TResult>>[] asyncTasks)
         {
             // Validate asyncTasks parameter and count number of tasks
-            var numTasks = asyncTasks?.Count()
+            var numTasks = asyncTasks?.Length
                 ?? throw new ArgumentNullException(nameof(asyncTasks));
+            context.SetNumLeftTasks(numTasks);
+
+            // Treat the case of blocking mode
+            if (isBlockingMode)
+            {
+                // If blocking mode is enabled, we need to create a semaphore
+                // to block the current thread until all tasks are completed.
+                context.Semaphore = new SemaphoreSlim(0, numTasks);
+            }
 
             // Prepare to run tasks synchronously
-            using IAsyncTaskDoorContext<T> context = new AsyncTaskDoorContext<T>(ct, IsBlocking, numTasks);
             var exceptions = context.Exceptions;
             var semaphore = context.Semaphore;
             var results = context.Results;
 
-            // Fire each of the tasks
+            // Let each of the tasks go
             foreach (var task in asyncTasks)
             {
                 try
                 {
-                    // Fire the task and collect its result or exception
-                    SafeFireAndCollectResult(task, context);
+                    // Let the tasks go and collect its result or exception
+                    SafeLetItGoAndCollectResult(task, context);
                 }
                 catch (Exception ex)
                 {
                     // If an exception occurs while creating the task, we enqueue it
-                    // Note: This is a defensive check, as SafeFireAndCollectResult should handle all exceptions.
+                    // Note: This is a defensive check, as SafeLetItGoAndCollectResult should handle all exceptions.
                     exceptions.Enqueue(new AggregateException(ex));
                     semaphore?.Release();
                 }
@@ -135,62 +66,6 @@ namespace Docodemo.Async.Tasks.Extentions
             // Return results and any exceptions that occurred
             // Note: return Enumerable snapshot of results and exceptions to avoid issues with concurrent modifications.
             return (results.ToArray(), exceptions.Any() ? exceptions.ToArray() : null);
-        }
-
-        /// <summary>
-        /// Runs a collection of asynchronous tasks that do not return results.
-        /// </summary>
-        public IEnumerable<AggregateException>? Explore(params Func<Task>[] asyncTasks)
-        {
-            // Convert to token-aware form
-            Func<CancellationToken, Task>[] converted = asyncTasks
-                .Select<Func<Task>, Func<CancellationToken, Task>>(f => ct => f())
-                .ToArray();
-
-            return Explore(CancellationToken.None, converted);
-        }
-
-        /// <summary>
-        /// Runs a collection of asynchronous tasks that do not return results,
-        /// using the default timeout if configured.
-        /// </summary>
-        public IEnumerable<AggregateException>? Explore(params Func<CancellationToken, Task>[] asyncTasks)
-        {
-            if (DefaultTimeout is { TotalMilliseconds: > 0 })
-            {
-                return Explore(DefaultTimeout.Value, asyncTasks);
-            }
-
-            return Explore(CancellationToken.None, asyncTasks);
-        }
-
-        /// <summary>
-        /// Runs a collection of asynchronous tasks that do not return results,
-        /// with a specified timeout.
-        /// </summary>
-        public IEnumerable<AggregateException>? Explore(TimeSpan timeout, params Func<CancellationToken, Task>[] asyncTasks)
-        {
-            using CancellationTokenSource cts = new(timeout);
-            return Explore(cts.Token, asyncTasks);
-        }
-
-        /// <summary>
-        /// Runs a collection of asynchronous tasks that do not return results,
-        /// with cancellation support.
-        /// </summary>
-        public IEnumerable<AggregateException>? Explore(CancellationToken ct, params Func<CancellationToken, Task>[] asyncTasks)
-        {
-            // Wrap each task to return dummy result
-            Func<CancellationToken, Task<int>>[] converted = asyncTasks
-                .Select<Func<CancellationToken, Task>, Func<CancellationToken, Task<int>>>(f => async token =>
-                {
-                    await f(token);
-                    return 0; // Dummy result
-                }).ToArray();
-
-            // Discard results, return only exceptions
-            var (_, exceptions) = Investigate(ct, converted);
-            return exceptions;
         }
 
         /// <summary>
@@ -258,11 +133,11 @@ namespace Docodemo.Async.Tasks.Extentions
         }
 
         /// <summary>
-        /// Safely fires an asynchronous task and collects its result or exception.
+        /// Safely let an asynchronous task go and collects its result or exception.
         /// </summary>
-        private void SafeFireAndCollectResult<T>(
+        private void SafeLetItGoAndCollectResult<T>(
             Func<CancellationToken, Task<T>> task,
-            IAsyncTaskDoorContext<T> context
+            IAsyncTaskDoorRunnerContext<T> context
         )
         {
             // This method is responsible for firing the task and collecting its result or exception.
@@ -277,7 +152,7 @@ namespace Docodemo.Async.Tasks.Extentions
                     throw new OperationCanceledException(ct);
                 }
 
-                // Fire the task and continue processing its result or exception
+                // Let the task go and continue processing its result or exception
                 task(ct).ContinueWith((taskResult) => 
                                     {
                                         // This continuation is called when the task completes.
@@ -309,7 +184,7 @@ namespace Docodemo.Async.Tasks.Extentions
         /// Processes the completed task, handling its result or exception.
         /// </summary>
         private void PostProcessTask<T>(
-            Task<T> task, IAsyncTaskDoorContext<T> context
+            Task<T> task, IAsyncTaskDoorRunnerContext<T> context
 
         ) {
             // This method is called when the task completes.

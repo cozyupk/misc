@@ -5,8 +5,12 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>9.0</LangVersion>
 		<OutputType>Library</OutputType>
-		<RootNamespace>Docodemo.Async.Tasks.Abstractions</RootNamespace>
-		<AssemblyName>Docodemo.Async.Tasks.Abstractions</AssemblyName>
+		<RootNamespace>Docodemo.Async.Tasks.Extentions</RootNamespace>
+		<AssemblyName>Docodemo.Async.Tasks.Extensions</AssemblyName>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\DefaultDoor\0200_DefaultDoor.csproj" />
+	</ItemGroup>
 
 </Project>

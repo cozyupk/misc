@@ -3,17 +3,19 @@ using System.Threading;
 using System;
 using Docodemo.Async.Tasks.Abstractions;
 
-namespace Docodemo.Async.Tasks.Extentions
+namespace Docodemo.Async.Tasks.DefaultDoor
 {
     /// <summary>
     /// Represents the context for an investigation, including cancellation token and semaphore for task completion.
+    /// In this partial file, we implement the <see cref="IAsyncTaskDoorRunnerContext{TResult}"/> interface.
     /// </summary>
-    internal class AsyncTaskDoorContext<T> : IAsyncTaskDoorContext<T>
+    public partial class DefaultAsyncTaskDoorContext<TResult>
+        : IAsyncTaskDoorRunnerContext<TResult>
     {
         /// <summary>
         /// A queue to store results of the tasks.
         /// </summary>
-        public ConcurrentQueue<T> Results { get; } = new();
+        public ConcurrentQueue<TResult> Results { get; } = new();
 
         /// <summary>
         /// A queue to store exceptions that occurred during the investigation.
@@ -31,6 +33,26 @@ namespace Docodemo.Async.Tasks.Extentions
         public CancellationToken CancellationToken { get; }
 
         /// <summary>
+        /// The number of tasks that are still left to be processed.
+        /// Note: We use field insted of property to use Interlocked operations for thread safety.
+        /// </summary>
+        private int NumLeftTasks;
+
+        /// <summary>
+        /// Sets the number of tasks that are still left to be processed.
+        /// </summary>
+        public void SetNumLeftTasks(int numTasks)
+        {
+            // Validate the number of tasks to be non-negative.
+            if (numTasks < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(numTasks), "Number of tasks cannot be negative.");
+            }
+            // Store the number of tasks that are still left to be processed.
+            Interlocked.Exchange(ref NumLeftTasks, numTasks);
+        }
+
+        /// <summary>
         /// Decrements the number of tasks left to be processed and returns the new count.
         /// </summary>
         public int DecrementNumLeftTasks()
@@ -39,16 +61,11 @@ namespace Docodemo.Async.Tasks.Extentions
         }
 
         /// <summary>
-        /// The number of tasks that are still left to be processed.
-        /// Note: We use field insted of property to use Interlocked operations for thread safety.
-        /// </summary>
-        private int NumLeftTasks;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="InvestigationContext"/> class.
         /// </summary>
-        public AsyncTaskDoorContext(CancellationToken cancellationToken, bool isBlocking, int numTasks)
+        public DefaultAsyncTaskDoorContext()
         {
+            /*
             // store the cancellation token
             CancellationToken = cancellationToken;
             // store the number of tasks
@@ -58,6 +75,7 @@ namespace Docodemo.Async.Tasks.Extentions
             {
                 Semaphore = new(0, numTasks);
             }
+            */
         }
 
         /// <summary>

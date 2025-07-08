@@ -7,13 +7,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docodemo.Async.Tasks", "Doc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0100_Abstractions", "src\Docodemo.Async.Tasks\Abstractions\0100_Abstractions.csproj", "{64033D82-00E4-9B24-8702-28C1ECD4F8D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0200_Extensions", "src\Docodemo.Async.Tasks\Extensions\0200_Extensions.csproj", "{4D031C08-2D46-7A78-82A6-F878EAE49F4E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0300_Extensions", "src\Docodemo.Async.Tasks\Extensions\0300_Extensions.csproj", "{4D031C08-2D46-7A78-82A6-F878EAE49F4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0300_UnitTests", "src\Docodemo.Async.Tasks\UnitTests\0300_UnitTests.csproj", "{664A4A8E-CC2A-DDA1-300C-3B5BA959BE8C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0400_UnitTests", "src\Docodemo.Async.Tasks\UnitTests\0400_UnitTests.csproj", "{664A4A8E-CC2A-DDA1-300C-3B5BA959BE8C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0400_UsageExampleForAsyncHandler", "src\Docodemo.Async.Tasks\UsageExampleForAsyncHandler\0400_UsageExampleForAsyncHandler.csproj", "{E523965C-7399-78DF-7A25-1FFF5E69FF64}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0500_UsageExampleForAsyncHandler", "src\Docodemo.Async.Tasks\UsageExampleForAsyncHandler\0500_UsageExampleForAsyncHandler.csproj", "{E523965C-7399-78DF-7A25-1FFF5E69FF64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0500_UsageExampleForAsyncRunner", "src\Docodemo.Async.Tasks\UsageExampleForAsyncRunner\0500_UsageExampleForAsyncRunner.csproj", "{6343C843-A53F-C99E-0A26-73B5907910A0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0600_UsageExampleForAsyncRunner", "src\Docodemo.Async.Tasks\UsageExampleForAsyncRunner\0600_UsageExampleForAsyncRunner.csproj", "{6343C843-A53F-C99E-0A26-73B5907910A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0200_DefaultDoor", "src\Docodemo.Async.Tasks\DefaultDoor\0200_DefaultDoor.csproj", "{A295AEAE-04E9-4F7B-AD36-22E5B330CE0E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,10 @@ Global
 		{6343C843-A53F-C99E-0A26-73B5907910A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6343C843-A53F-C99E-0A26-73B5907910A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6343C843-A53F-C99E-0A26-73B5907910A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A295AEAE-04E9-4F7B-AD36-22E5B330CE0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A295AEAE-04E9-4F7B-AD36-22E5B330CE0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A295AEAE-04E9-4F7B-AD36-22E5B330CE0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A295AEAE-04E9-4F7B-AD36-22E5B330CE0E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -51,6 +57,7 @@ Global
 		{664A4A8E-CC2A-DDA1-300C-3B5BA959BE8C} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 		{E523965C-7399-78DF-7A25-1FFF5E69FF64} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 		{6343C843-A53F-C99E-0A26-73B5907910A0} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
+		{A295AEAE-04E9-4F7B-AD36-22E5B330CE0E} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09699C21-ED43-4667-9AE5-723807C00338}

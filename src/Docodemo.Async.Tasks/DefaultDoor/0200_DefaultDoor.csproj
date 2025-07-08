@@ -5,8 +5,8 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>9.0</LangVersion>
 		<OutputType>Library</OutputType>
-		<RootNamespace>Docodemo.Async.Task.Extentions</RootNamespace>
-		<AssemblyName>Docodemo.Async.Task.Extensions</AssemblyName>
+		<RootNamespace>Docodemo.Async.Tasks.DefaultDoor</RootNamespace>
+		<AssemblyName>Docodemo.Async.Tasks.DefaultDoor</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
