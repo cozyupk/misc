@@ -14,9 +14,9 @@ namespace ConsoleApp1_ja_JP
         {
             // 「スレッド攪拌処理」を動かしておく
             CancellationTokenSource cts = new();
-            // _ = ThreadProbe.StirThreadPoolAsync(cts.Token);
-            // _ = ThreadProbe.StirThreadPoolAsync(cts.Token);
-            // _ = ThreadProbe.StirThreadPoolAsync(cts.Token);
+            _ = ThreadProbe.StirThreadPoolAsync(cts.Token);
+            _ = ThreadProbe.StirThreadPoolAsync(cts.Token);
+            _ = ThreadProbe.StirThreadPoolAsync(cts.Token);
 
             Console.WriteLine();
 
