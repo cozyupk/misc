@@ -20,9 +20,10 @@ namespace Probe
         /// <summary>
         /// Initializes a new instance of the <see cref="SingleThreadSyncContext"/> class.
         /// </summary>
-        public SingleThreadSyncContext()
+        public SingleThreadSyncContext(ThreadProbe threadProbe)
         {
             Thread = new Thread(Run);
+            threadProbe.SetManagedThreadIdOfSyncronizedSingleThreadContext(Thread.ManagedThreadId);
             Thread.Start();
         }
 
@@ -46,6 +47,9 @@ namespace Probe
             }
         }
 
+        /// <summary>
+        /// Completes the processing of callbacks and stops the thread.
+        /// </summary>
         public void Complete() => Queue.CompleteAdding();
     }
 }

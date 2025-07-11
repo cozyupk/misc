@@ -39,13 +39,13 @@ namespace ConsoleApp1_ja_JP
 
             // 以下、SynchronizationContext が null ではなく、シングルスレッドコンテキストの場合の実行
             //  ≒ UIスレッドや　ASP.NET のシングルスレッドコンテキストなど
-            var syncCtx = new SingleThreadSyncContext();
+            var syncCtx = new SingleThreadSyncContext(threadProbe);
             SynchronizationContext.SetSynchronizationContext(syncCtx);
 
             // シングルスレッドコンテキスト側に移行する
             await Task.Yield();
 
-            Console.WriteLine($"=== SynchronizationContext.Current がシングルスレッドの場合 (ConfigureAwait 指定なし ) ===");
+            Console.WriteLine($"=== SynchronizationContext.Current がシングルスレッド同期コンテキスト(以下、STSC)の場合 (ConfigureAwait 指定なし ) ===");
             await ExecuteCase(threadProbe, Case_AwaitAndReturnContinueWithUnwrappedTask(threadProbe));
 
             // ContinueWith と ConfigureAwait の挙動を観察するケースを実行
@@ -56,19 +56,29 @@ namespace ConsoleApp1_ja_JP
             };
             foreach (var (configureAwaitForExecuting, configureAwaitForWaiting) in patterns)
             {
-                Console.WriteLine($"=== SynchronizationContext.Current がシングルスレッドの場合 (ConfigureAwait: {configureAwaitForExecuting}/{configureAwaitForWaiting}) ===");
+                Console.WriteLine($"=== SynchronizationContext.Current がSTSCの場合 (ConfigureAwait: {configureAwaitForExecuting}/{configureAwaitForWaiting}) ===");
                 await ExecuteCaseWithConfigureAwait(
                     threadProbe, Case_AwaitAndReturnContinueWithUnwrappedTask(threadProbe), configureAwaitForExecuting, configureAwaitForWaiting
                 );
             }
 
-            Console.WriteLine($"=== SynchronizationContext.Current がシングルスレッドの場合 (await Task.CompletedTask.ConfigureAwait(false); ===");
+            Console.WriteLine($"=== SynchronizationContext.Current がSTSCの場合 (await Task.CompletedTask.ConfigureAwait(false)); ===");
             await ExecuteCaseWithEmptyAwait(
                 threadProbe, Case_AwaitAndReturnContinueWithUnwrappedTask(threadProbe)
             );
 
-            Console.WriteLine($"=== SynchronizationContext.Current がシングルスレッドの場合 (YieldOnlyAsync ===");
+            Console.WriteLine($"=== SynchronizationContext.Current がSTSCの場合 (await YieldOnlyAsync().ConfigureAwait(false)) ===");
             await ExecuteCaseWithEmptyAwait2(
+                threadProbe, Case_AwaitAndReturnContinueWithUnwrappedTask(threadProbe)
+            );
+
+            Console.WriteLine($"=== SynchronizationContext.Current がSTSCの場合 (Task.Delay(0).ConfigureAwait(false)) ===");
+            await ExecuteCaseWithTaskEmptyDelay(
+                threadProbe, Case_AwaitAndReturnContinueWithUnwrappedTask(threadProbe)
+            );
+
+            Console.WriteLine($"=== SynchronizationContext.Current がSTSCの場合 (Task.Delay(1).ConfigureAwait(false)) ===");
+            await ExecuteCaseWithTaskNonEmptyDelay(
                 threadProbe, Case_AwaitAndReturnContinueWithUnwrappedTask(threadProbe)
             );
 
@@ -115,6 +125,7 @@ namespace ConsoleApp1_ja_JP
         /// </summary>
         static async Task ExecuteCaseWithEmptyAwait(ThreadProbe threadProbe, (string, Func<Task>) caseToExecute)
         {
+            threadProbe.WriteLineThreadID($"before await Task.CompletedTask.ConfigureAwait(false): {caseToExecute.Item1}");
             await Task.CompletedTask.ConfigureAwait(false);
             threadProbe.WriteLineThreadID($"await 開始: {caseToExecute.Item1}");
             await caseToExecute.Item2();
@@ -126,6 +137,7 @@ namespace ConsoleApp1_ja_JP
 
         /// <summary>
         /// 指定されたケースを実行し、スレッドの状態を出力するメソッドです。
+        /// (Task.Yield() を利用して、空の await を実行)
         /// </summary>
         static async Task ExecuteCaseWithEmptyAwait2(ThreadProbe threadProbe, (string, Func<Task>) caseToExecute)
         {
@@ -134,8 +146,40 @@ namespace ConsoleApp1_ja_JP
                 await Task.Yield();
             }
 
-            threadProbe.WriteLineThreadID($"before YieldOnlyAsync: {caseToExecute.Item1}");
+            threadProbe.WriteLineThreadID($"before await YieldOnlyAsync().ConfigureAwait(false): {caseToExecute.Item1}");
             await YieldOnlyAsync().ConfigureAwait(false);
+            threadProbe.WriteLineThreadID($"await 開始: {caseToExecute.Item1}");
+            await caseToExecute.Item2();
+            threadProbe.WriteLineThreadID($"await 完了: {caseToExecute.Item1}");
+            await Task.Delay(1000);
+            threadProbe.WriteLineThreadID($"待機完了: {caseToExecute.Item1}");
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// 指定されたケースを実行し、スレッドの状態を出力するメソッドです。
+        /// (Task.Delay(0)を利用して、空の await を実行)
+        /// </summary>
+        static async Task ExecuteCaseWithTaskEmptyDelay(ThreadProbe threadProbe, (string, Func<Task>) caseToExecute)
+        {
+            threadProbe.WriteLineThreadID($"before await Task.Delay(0).ConfigureAwait(false): {caseToExecute.Item1}");
+            await Task.Delay(0).ConfigureAwait(false);
+            threadProbe.WriteLineThreadID($"await 開始: {caseToExecute.Item1}");
+            await caseToExecute.Item2();
+            threadProbe.WriteLineThreadID($"await 完了: {caseToExecute.Item1}");
+            await Task.Delay(1000);
+            threadProbe.WriteLineThreadID($"待機完了: {caseToExecute.Item1}");
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// 指定されたケースを実行し、スレッドの状態を出力するメソッドです。
+        /// (Task.Delay(0)を利用して、空の await を実行)
+        /// </summary>
+        static async Task ExecuteCaseWithTaskNonEmptyDelay(ThreadProbe threadProbe, (string, Func<Task>) caseToExecute)
+        {
+            threadProbe.WriteLineThreadID($"before Task.Delay(1).ConfigureAwait(false): {caseToExecute.Item1}");
+            await Task.Delay(1).ConfigureAwait(false);
             threadProbe.WriteLineThreadID($"await 開始: {caseToExecute.Item1}");
             await caseToExecute.Item2();
             threadProbe.WriteLineThreadID($"await 完了: {caseToExecute.Item1}");
