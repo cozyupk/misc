@@ -8,9 +8,33 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnderStandingConfigureAwait", "UnderStandingConfigureAwait", "{DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0000_Probe", "src\UnderStandingConfigureAwait\Probe\0000_Probe.csproj", "{DCE9EC3F-6104-4A9B-9FE5-980A28CF29AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0010_ConsoleApp1", "src\UnderStandingConfigureAwait\ConsoleApp1\0010_ConsoleApp1.csproj", "{0EFBF129-E7DA-47A6-A99A-96A49DE10130}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DCE9EC3F-6104-4A9B-9FE5-980A28CF29AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCE9EC3F-6104-4A9B-9FE5-980A28CF29AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCE9EC3F-6104-4A9B-9FE5-980A28CF29AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCE9EC3F-6104-4A9B-9FE5-980A28CF29AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EFBF129-E7DA-47A6-A99A-96A49DE10130}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EFBF129-E7DA-47A6-A99A-96A49DE10130}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EFBF129-E7DA-47A6-A99A-96A49DE10130}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EFBF129-E7DA-47A6-A99A-96A49DE10130}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DCE9EC3F-6104-4A9B-9FE5-980A28CF29AE} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
+		{0EFBF129-E7DA-47A6-A99A-96A49DE10130} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09699C21-ED43-4667-9AE5-723807C00338}
