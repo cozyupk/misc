@@ -37,11 +37,6 @@ namespace Probe
         }
 
         /// <summary>
-        /// Random object to generate random sleep durations for tasks.
-        /// </summary>
-        private static readonly Random Rng = new();
-
-        /// <summary>
         /// Stirs the thread pool by creating a burst of tasks that sleep for a random duration.
         /// </summary>
         public static async Task StirThreadPoolAsync(CancellationToken cancellationToken)
@@ -50,11 +45,11 @@ namespace Probe
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                var tasks = Enumerable.Range(0, 10).Select(_ => Task.Run(() =>
+                var tasks = Enumerable.Range(1, 60).Select(t => Task.Run(() =>
                 {
                     try
                     {
-                        var sleepMs = Rng.Next(1, 5);
+                        var sleepMs = t;
                         Thread.Sleep(sleepMs);
                     }
                     catch (Exception ex)
