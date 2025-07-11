@@ -9,7 +9,7 @@ This code helps demystify that – with good old **printf-style debugging**.
 ### 📄 Related Article (Japanese)
 
 The code introduced here is explained in detail in the following Japanese article:  
-👉 Qiita Article (async/await thread visualization) ← _link to be updated_
+👉 Qiita Article [さいきょうの .NET async/await 見える化計画（なお printf デバッグのもよう）](https://qiita.com/cozyupk/items/50bfa7e5ba6d6bf5121e)
 
 ___________
 
@@ -52,20 +52,6 @@ Unless you explicitly `Unwrap()`, you'll only be waiting for the outer task to f
 ```csharp
 task.ContinueWith(...);         // ❌ May not wait correctly
 task.ContinueWith(...).Unwrap(); // ✅ Correct way to await async continuations
-```
-
-___________
-
-Repository Structure
---------------------
-
-```
-src/
-  task-continuation-probe/
-    Program.cs
-    ThreadProbe.cs
-    StirThreadPool.cs
-    ...
 ```
 
 ___________
