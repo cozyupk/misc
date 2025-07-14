@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "task-continuation-probe", "task-continuation-probe", "{DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}"
 	ProjectSection(SolutionItems) = preProject
+		src\task-continuation-probe\README.ja.md = src\task-continuation-probe\README.ja.md
 		src\task-continuation-probe\README.md = src\task-continuation-probe\README.md
 	EndProjectSection
 EndProject
@@ -18,6 +19,22 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0010_ConsoleApp_ja_JP", "src\task-continuation-probe\ConsoleApp_ja_JP\0010_ConsoleApp_ja_JP.csproj", "{8479F82D-7DFF-096E-B1FB-262A7C21F7F4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0020_ConsoleApp_en_US", "src\task-continuation-probe\ConsoleApp_en_US\0020_ConsoleApp_en_US.csproj", "{1AE5A33A-8EEB-599D-9A91-760F458DA10C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "true-fluentaizer", "true-fluentaizer", "{FA9C32E3-22DF-4FB5-B1A9-6F133DB7AAE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "src\true-fluentaizer\ConsoleApp1\ConsoleApp1.csproj", "{8C6E1595-3C4F-43CB-8DEB-EE5CE152D72B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02_TrueFluentaizer", "02_TrueFluentaizer", "{63940C6B-8B2E-430A-80A2-855930A58807}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0100_Abstractions", "src\true-fluentaizer\TrueFluentaizer\Abstractions\0100_Abstractions.csproj", "{C47392F7-377C-914C-02B3-8AAE72141C18}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0200_Generators", "src\true-fluentaizer\TrueFluentaizer\Generators\0200_Generators.csproj", "{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01_PartialClassExtensionGenerator", "01_PartialClassExtensionGenerator", "{32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0100_Abstractions", "src\true-fluentaizer\PartialClassExtensionGenerator\Abstractions\0100_Abstractions.csproj", "{B42D2796-7EFA-45C6-B25E-49C7C79C0536}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0200_GeneratorBase", "src\true-fluentaizer\PartialClassExtensionGenerator\GeneratorBase\0200_GeneratorBase.csproj", "{F40DF44C-0A7C-470E-8958-A0B854C28E76}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,6 +54,26 @@ Global
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C6E1595-3C4F-43CB-8DEB-EE5CE152D72B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C6E1595-3C4F-43CB-8DEB-EE5CE152D72B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C6E1595-3C4F-43CB-8DEB-EE5CE152D72B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C6E1595-3C4F-43CB-8DEB-EE5CE152D72B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C47392F7-377C-914C-02B3-8AAE72141C18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C47392F7-377C-914C-02B3-8AAE72141C18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C47392F7-377C-914C-02B3-8AAE72141C18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C47392F7-377C-914C-02B3-8AAE72141C18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B42D2796-7EFA-45C6-B25E-49C7C79C0536}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B42D2796-7EFA-45C6-B25E-49C7C79C0536}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B42D2796-7EFA-45C6-B25E-49C7C79C0536}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B42D2796-7EFA-45C6-B25E-49C7C79C0536}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F40DF44C-0A7C-470E-8958-A0B854C28E76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F40DF44C-0A7C-470E-8958-A0B854C28E76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F40DF44C-0A7C-470E-8958-A0B854C28E76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F40DF44C-0A7C-470E-8958-A0B854C28E76}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -45,6 +82,13 @@ Global
 		{D4CBEDA7-2BDC-0002-4B1E-201CD3FB8CEE} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 		{8479F82D-7DFF-096E-B1FB-262A7C21F7F4} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
+		{8C6E1595-3C4F-43CB-8DEB-EE5CE152D72B} = {FA9C32E3-22DF-4FB5-B1A9-6F133DB7AAE8}
+		{63940C6B-8B2E-430A-80A2-855930A58807} = {FA9C32E3-22DF-4FB5-B1A9-6F133DB7AAE8}
+		{C47392F7-377C-914C-02B3-8AAE72141C18} = {63940C6B-8B2E-430A-80A2-855930A58807}
+		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3} = {63940C6B-8B2E-430A-80A2-855930A58807}
+		{32EE7BB6-167E-4FF7-B5B3-B44F65200BD1} = {FA9C32E3-22DF-4FB5-B1A9-6F133DB7AAE8}
+		{B42D2796-7EFA-45C6-B25E-49C7C79C0536} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
+		{F40DF44C-0A7C-470E-8958-A0B854C28E76} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09699C21-ED43-4667-9AE5-723807C00338}

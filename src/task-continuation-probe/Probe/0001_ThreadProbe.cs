@@ -50,11 +50,12 @@ namespace Probe
                 lock (LockThreadIdToLabel)
                 {
                     // If the thread ID is not already in the dictionary, add it with a label
-                    if (!ThreadIdToLabel.ContainsKey(ThreadId))
+                    if (!ThreadIdToLabel.TryGetValue(ThreadId, out string? value))
                     {
-                        ThreadIdToLabel[ThreadId] = $"Thread {ThreadIdToLabel.Count + 1:X2}";
+                        value = $"Thread {ThreadIdToLabel.Count + 1:X2}";
+                        ThreadIdToLabel[ThreadId] = value;
                     }
-                    threadLabel = ThreadIdToLabel[ThreadId];
+                    threadLabel = value;
                 }
             }
 
