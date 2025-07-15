@@ -18,12 +18,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Abstractions\0100_Abstractions.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Compile Include="..\..\PartialClassExtensionGenerator\Abstractions\*.cs" Link="Utils\Abstractions\%(Filename)%(Extension)" />
-		<Compile Include="..\..\PartialClassExtensionGenerator\GeneratorBase\*.cs" Link="Utils\GeneratorBase\%(Filename)%(Extension)" />
+		<Compile Include="..\\Abstractions\*.cs" Link="Utils\Abstractions\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\Abstractions\0110_Analyzer\*.cs" Link="Utils\PCEG.Abstractions\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\Abstractions\0120_Generator\*.cs" Link="Utils\PCEG.Abstractions\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\Abstractions\0130_Common\*.cs" Link="Utils\PCEG.Abstractions\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\Utils\*.cs" Link="Utils\PCEG.Utils\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\AnalyzerBase\*.cs" Link="Utils\PCEG.AnalyzerBase\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\GeneratorBase\*.cs" Link="Utils\PCEG.GeneratorBase\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\GenalyzerBase\*.cs" Link="Utils\PCEG.GenalyzerBase\%(Filename)%(Extension)" />
 	</ItemGroup>
 	
 </Project>

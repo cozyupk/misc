@@ -3,7 +3,7 @@
 namespace ConsoleApp1
 {
     [FluentBuilder]
-    internal partial class TestBuilder<TType>
+    internal class TestBuilder<TType>
         where TType : class
     {
 

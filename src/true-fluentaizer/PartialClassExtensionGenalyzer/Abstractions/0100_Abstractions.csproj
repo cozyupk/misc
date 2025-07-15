@@ -5,12 +5,16 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>9.0</LangVersion>
 		<Nullable>enable</Nullable>
-		<RootNamespace>PartialClassExtensionGenerator.Abstractions</RootNamespace>
-		<AssemblyName>PartialClassExtensionGenerator.Abstractions</AssemblyName>
+		<RootNamespace>PartialClassExtGen.Abstractions</RootNamespace>
+		<AssemblyName>PartialClassExtGen.Abstractions</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
 	  <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.14.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="0110_Analyzer\" />
 	</ItemGroup>
 
 </Project>
