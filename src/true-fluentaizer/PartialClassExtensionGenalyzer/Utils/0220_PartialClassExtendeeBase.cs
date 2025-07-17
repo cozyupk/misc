@@ -4,51 +4,58 @@ using System;
 namespace PartialClassExtGen.Utils
 {
     /// <summary>
-    /// Serves as the base class for partial class extensions, providing core functionality and diagnostic support.
+    /// Represents the base class for partial class extension functionality, providing access to an extender and
+    /// diagnostic descriptors.
     /// </summary>
-    /// <remarks>This class is designed to be extended by partial class implementations. It provides a
-    /// mechanism to integrate additional functionality through an <see cref="IPartialClassExtender"/> and supports
-    /// diagnostic handling via <see cref="IPCEGDiagnostics"/>. Both dependencies are required for proper
-    /// operation.</remarks>
-    public class PartialClassExtendeeBase
+    /// <remarks>This class serves as a foundational type for managing partial class extensions, encapsulating
+    /// an extender and optional diagnostic descriptors. The <see cref="Extender"/> property provides access to the
+    /// extender functionality, while the <see cref="EmbeddedDiagnostics"/> property exposes diagnostic
+    /// descriptors.</remarks>
+    /// <typeparam name="TPartialClassExtender">The type of the extender that implements <see cref="IPartialClassExtender"/>.</typeparam>
+    /// <typeparam name="TDiagnostics">The type of the diagnostic descriptors used for Partial Class Extension Genalyzer (PCEG), implementing <see
+    /// cref="IPCEGDiagnostics"/>.</typeparam>
+    public class PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>
+            where TPartialClassExtender : class, IPartialClassExtender
+            where TDiagnostics : class, IPCEGDiagnostics
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PartialClassExtendeeBase"/> class.
+        /// Gets the extender object associated with the partial class.
         /// </summary>
-        /// <param name="extender">The extender instance that provides additional functionality for the partial class.</param>
-        /// <param name="pcegDiagnostics">The diagnostic descriptors used for handling diagnostics in the partial class extension.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="extender"/> is <see langword="null"/> or if <paramref
-        /// name="pcegDiagnostics"/> is <see langword="null"/>.</exception>
-        public PartialClassExtendeeBase(IPartialClassExtender extender, IPCEGDiagnostics? pcegDiagnostics = null)
-        {
-            // Validate parameters to ensure they are not null and store them in properties.
-            Extender = extender ?? throw new ArgumentNullException(nameof(extender));
-            PCEGDiagnosticsInternal = pcegDiagnostics;
-        }
-
-        /// <summary>
-        /// Gets the extender that provides additional functionality for partial classes.
-        /// </summary>
-        public IPartialClassExtender Extender { get; }
-
-        /// <summary>
-        /// Gets the internal diagnostic descriptors for PCEG (Process Control Execution Graph).
-        /// </summary>
-        private IPCEGDiagnostics? PCEGDiagnosticsInternal { get; }
+        public TPartialClassExtender Extender { get; }
 
         /// <summary>
         /// Gets the diagnostic descriptors used for PCEG (Partial Class Extention Genalyzer).
         /// </summary>
-        public IPCEGDiagnostics PCEGDiagnostics
+        public TDiagnostics Diagnostics
         {
             get
             {
-                if (PCEGDiagnosticsInternal is null)
+                if (EmbeddedDiagnosticsInternal is null)
                 {
-                    throw new InvalidOperationException("pcegDiagnosticsInternal is null. Ensure it is initialized properly.");
+                    throw new InvalidOperationException("DiagnosticsInternal is null. Ensure it is initialized properly.");
                 }
-                return PCEGDiagnosticsInternal;
+                return EmbeddedDiagnosticsInternal;
             }
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PartialClassExtendeeBase{TPartialClassExtender,
+        /// TPCEGDiagnostics}"/> class.
+        /// </summary>
+        /// <param name="extender">The extender instance used to provide additional functionality. This parameter cannot be <see
+        /// langword="null"/>.</param>
+        /// <param name="diagnostics">Optional diagnostics information for the partial class extender. If not provided, the default value is used.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="extender"/> is <see langword="null"/>.</exception>
+        public PartialClassExtendeeBase(TPartialClassExtender extender, TDiagnostics? diagnostics = default)
+        {
+            // Validate parameters to ensure they are not null and store them in properties.
+            Extender = extender ?? throw new ArgumentNullException(nameof(extender));
+            EmbeddedDiagnosticsInternal = diagnostics;
+        }
+
+        /// <summary>
+        /// Gets the internal diagnostics information for the PCEG system.
+        /// </summary>
+        private TDiagnostics? EmbeddedDiagnosticsInternal { get; }
     }
 }

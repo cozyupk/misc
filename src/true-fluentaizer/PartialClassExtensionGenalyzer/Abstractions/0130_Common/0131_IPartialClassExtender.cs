@@ -1,5 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -36,9 +35,14 @@ namespace PartialClassExtGen.Abstractions.Common
         string SuffixForGeneratedFiles { get; }
 
         /// <summary>
-        /// Gets the prefix used for diagnostic identifiers.
+        /// Gets the prefix used for diagnostic error identifiers.
         /// </summary>
-        string PrefixForDiagnosticId { get; }
+        string ErrorPrefixForDiagnosticId { get; }
+
+        /// <summary>
+        /// Gets the prefix used to identify warning diagnostic identifiers.
+        /// </summary>
+        string WarningPrefixForDiagnosticId { get; }
 
         //////////////////////////////
         //// For Source Generator ////
@@ -54,23 +58,28 @@ namespace PartialClassExtGen.Abstractions.Common
         /// null.</param>
         /// <returns>A collection of <see cref="Diagnostic"/> objects representing any issues encountered during the generation
         /// process, or <see langword="null"/> if no diagnostics were produced.</returns>
-        IEnumerable<Diagnostic>? GenerateImplementations(
+        IEnumerable<Diagnostic>? GenerateImplementationsInternal<TArgPartialClassExtender, TArgDiagnostics>(
+            TArgPartialClassExtender extender,
+            TArgDiagnostics diagnostics,
             INamedTypeSymbol symbol,
             Compilation compilation,
             StringBuilder sb
-        );
+        )
+            where TArgPartialClassExtender : class, IPartialClassExtender
+            where TArgDiagnostics : class, IPCEGDiagnostics;
 
         //////////////////////
         //// For Analyzer ////
         //////////////////////
 
+        /*
         /// <summary>
         /// Gets a collection of actions to analyze class declarations.
         /// </summary>
         /// <returns></returns>
         IEnumerable<Action<SyntaxNodeAnalysisContext>> GetAnalyzeClassDeclarations();
         IEnumerable<DiagnosticDescriptor> GetSupportedDiagnostics();
-
+        */
 
     }
 }

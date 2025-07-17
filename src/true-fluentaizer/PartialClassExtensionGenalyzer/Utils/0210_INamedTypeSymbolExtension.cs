@@ -15,7 +15,7 @@ namespace PartialClassExtGen.Utils
         /// </summary>
         /// <param name="symbol">The INamedTypeSymbol to format.</param>
         /// <returns>A string representing the formatted name of the symbol.</returns>
-        public static string GenericQualifiedName(this INamedTypeSymbol symbol)
+        public static string GetGenericQualifiedName(this INamedTypeSymbol symbol)
         {
             return symbol.IsGenericType
                 ? $"{symbol.Name}<{string.Join(", ", symbol.TypeArguments.Select(t => t.ToDisplayString()))}>"

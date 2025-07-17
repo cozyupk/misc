@@ -19,19 +19,20 @@ namespace PartialClassExtGen.Generator
     /// cref="IPartialClassExtender"/>  to generate the implementations and an <see cref="IPCEGDiagnostics"/>
     /// instance to handle  diagnostic reporting. The class ensures that any exceptions or errors encountered during the
     /// generation  process are appropriately reported as diagnostics.</remarks>
-    public sealed class PartialSourceOutput
-        : PartialClassExtendeeBase, ISourceOutput
+    public sealed class PartialSourceOutput<TPartialClassExtender, TDiagnostics>
+        : PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>, ISourceOutput
+        where TPartialClassExtender : class, IPartialClassExtender
+        where TDiagnostics : class, IPCEGDiagnostics
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PartialSourceOutput"/> class.
+        /// Initializes a new instance of the <see cref="PartialSourceOutput{TPartialClassExtender, TPCEGDiagnostics}"/>
+        /// class.  
         /// </summary>
-        /// <param name="extender">An implementation of <see cref="IPartialClassExtender"/> used to extend the functionality of partial
-        /// classes.</param>
-        /// <param name="pcegDiagnostics">An implementation of <see cref="IPCEGDiagnostics"/> that provides diagnostic descriptors for error
-        /// reporting and analysis.</param>
+        /// <param name="extender">The partial class extender used to provide additional functionality or modifications to the source output.</param>
+        /// <param name="diagnostics">The diagnostics object used for reporting issues or providing feedback during the generation process.</param>
         public PartialSourceOutput(
-            IPartialClassExtender extender, IPCEGDiagnostics pcegDiagnostics
-        ) : base(extender, pcegDiagnostics)
+            TPartialClassExtender extender, TDiagnostics diagnostics
+        ) : base(extender, diagnostics)
         {
             // No additional initialization needed here.
         }
@@ -70,7 +71,7 @@ namespace PartialClassExtGen.Generator
                 {
                     // If an exception occurs during the source output, report it
                     spc.ReportDiagnostic(Diagnostic.Create(
-                        PCEGDiagnostics
+                        Diagnostics
                             .PCEG0003_UnexpectedExceptionWhileGeneratingCode,
                         Location.None,
                         ex.Message
@@ -95,7 +96,7 @@ namespace PartialClassExtGen.Generator
         /// <param name="extender">The extender responsible for generating the implementations for the partial class.</param>
         private void SourceOutputInternal(
                 SourceProductionContext spc, Compilation compilation,
-                INamedTypeSymbol symbol, IPartialClassExtender extender
+                INamedTypeSymbol symbol, TPartialClassExtender extender
         )
         {
             // Generate the source code for the class
@@ -107,7 +108,7 @@ namespace PartialClassExtGen.Generator
             try
             {
                 // Generate the implementations using the extender
-                diagnostics = extender.GenerateImplementations(symbol, compilation, sb);
+                diagnostics = extender.GenerateImplementationsInternal(extender, Diagnostics, symbol, compilation, sb);
             }
             catch (Exception ex)
             {
@@ -116,10 +117,10 @@ namespace PartialClassExtGen.Generator
                 {
                     // Report the diagnostic for the exception
                     spc.ReportDiagnostic(Diagnostic.Create(
-                        PCEGDiagnostics
+                        Diagnostics
                             .PCEG0002_GenerateImplementations_ThrewException,
                         loc,
-                        symbol.GenericQualifiedName(), ex.Message
+                        symbol.GetGenericQualifiedName(), ex.Message
 
                     ));
                 }

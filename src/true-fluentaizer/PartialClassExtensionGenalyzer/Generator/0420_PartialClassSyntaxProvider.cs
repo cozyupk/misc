@@ -15,8 +15,10 @@ namespace PartialClassExtGen.Generator
     /// implementation of <see cref="IPartialClassExtender"/> to extend functionality and <see
     /// cref="IPCEGDiagnostics"/> to report diagnostics. It identifies target metadata for extension methods
     /// and facilitates metadata retrieval for partial class generation.</remarks>
-    public sealed class PartialClassSyntaxProvider 
-        : PartialClassExtendeeBase, IClassSyntaxProvider
+    public sealed class PartialClassSyntaxProvider<TPartialClassExtender, TDiagnostics>
+        : PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>, IClassSyntaxProvider
+        where TPartialClassExtender : class, IPartialClassExtender
+        where TDiagnostics : class, IPCEGDiagnostics
     {
         /// <summary>
         /// Gets the fully qualified metadata name via <see cref="Type"/> for Roslyn's metadata-based filtering.
@@ -24,14 +26,16 @@ namespace PartialClassExtGen.Generator
         public Type TargetAttribute => Extender.TargetAttribute;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PartialClassSyntaxProvider"/> class.
+        /// Initializes a new instance of the <see cref="PartialClassSyntaxProvider{TPartialClassExtender,
+        /// TPCEGDiagnostics}"/> class.
         /// </summary>
-        /// <param name="extender">An implementation of <see cref="IPartialClassExtender"/> used to extend partial class functionality.</param>
-        /// <param name="pcegDiagnostics">An implementation of <see cref="IPCEGDiagnostics"/> that provides diagnostic descriptors for
-        /// reporting issues related to partial class generation.</param>
+        /// <param name="extender">An instance of <typeparamref name="TPartialClassExtender"/> that provides functionality for extending
+        /// partial class syntax.</param>
+        /// <param name="diagnostics">An instance of <typeparamref name="TDiagnostics"/> used for handling diagnostics related to partial
+        /// class generation.</param>
         public PartialClassSyntaxProvider(
-            IPartialClassExtender extender, IPCEGDiagnostics pcegDiagnostics
-        ) : base(extender, pcegDiagnostics)
+            TPartialClassExtender extender, TDiagnostics diagnostics
+        ) : base(extender, diagnostics)
         {
             // No additional initialization needed here.
         }

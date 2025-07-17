@@ -23,22 +23,25 @@ namespace PartialClassExtGen.AnalyzerBase
 #pragma warning disable IDE0079 // Suppress unnecessary suppression
 #pragma warning disable RS1001 // No diagnostic analyzer attribute
 #pragma warning restore IDE0079 // Suppress unnecessary suppression
-    public class PartialClassAnalyzerBase : DiagnosticAnalyzer
+    public class PartialClassAnalyzerBase<TPartialClassExtender, TDiagnostics> : DiagnosticAnalyzer
 #pragma warning disable IDE0079 // Suppress unnecessary suppression
 #pragma warning restore RS1001 // No diagnostic analyzer attribute
 #pragma warning restore IDE0079 // Suppress unnecessary suppression
+        where TPartialClassExtender : class, IPartialClassExtender
+        where TDiagnostics : class, IPCEGDiagnostics
     {
         /// <summary>
-        /// Gets or sets the internal base instance of the partial class extender.
+        /// Gets or sets the internal base instance for the partial class extender.
         /// </summary>
-        /// <remarks>This property is intended for internal use and provides access to the base instance
-        /// of the partial class extender. It should not be accessed directly by external consumers.</remarks>
-        private PartialClassExtendeeBase? ExtendeeBaseInternal { get; set; }
+        /// <remarks>This property is intended for internal use and provides access to the base
+        /// functionality  of the partial class extender. It may be null if the base instance has not been
+        /// initialized.</remarks>
+        protected PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>? ExtendeeBaseInternal { get; set; }
 
         /// <summary>
-        /// Gets the base object used to extend the functionality of the current class.
+        /// Gets the base instance of the partial class extender.
         /// </summary>
-        private PartialClassExtendeeBase ExtendeeBase {
+        private PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics> ExtendeeBase {
             get
             {
                 if (ExtendeeBaseInternal is null)
@@ -50,26 +53,27 @@ namespace PartialClassExtGen.AnalyzerBase
         }
 
         /// <summary>
-        /// Gets the collection of <see cref="DiagnosticDescriptor"/> instances supported by this analyzer.
+        /// Gets the collection of diagnostic descriptors that this analyzer supports.  
         /// </summary>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-            => ImmutableArray.Create(ExtendeeBase.PCEGDiagnostics.PCEG0001_Missing_Partial_Modifier);
+            => ImmutableArray.Create(ExtendeeBase.Diagnostics.PCEG0001_Missing_Partial_Modifier);
 
         /// <summary>
-        /// Initializes the base class for partial class extension functionality.
+        /// Initializes the base class for the partial class extender with the specified extender and diagnostic
+        /// descriptors.
         /// </summary>
-        /// <remarks>This method sets up the internal base class for handling partial class extensions. 
-        /// It is necessary because the class cannot directly inherit from <see cref="PartialClassExtendeeBase"/>  due
-        /// to already inheriting from <see cref="DiagnosticAnalyzer"/>.</remarks>
-        /// <param name="partialClassExtender">The extender that provides additional functionality for partial classes.</param>
-        /// <param name="pcegDiagnostics">The diagnostic descriptors used for reporting diagnostics related to partial class extensions.</param>
+        /// <remarks>This method sets up the internal base class representation using the provided
+        /// extender and diagnostics. Note that inheritance from <c>PartialClassExtendeeBase</c> is not possible due to
+        /// existing inheritance from <c>DiagnosticAnalyzer</c>.</remarks>
+        /// <param name="partialClassExtender">The extender instance used to provide additional functionality for the partial class.</param>
+        /// <param name="diagnostics">The diagnostic descriptors associated with the partial class extender.</param>
         public void InitializeExtendeeBase(
-            IPartialClassExtender partialClassExtender,
-            IPCEGDiagnostics pcegDiagnostics
+            TPartialClassExtender partialClassExtender,
+            TDiagnostics diagnostics
         ) {
             // Initialize the base class with the provided extender and diagnostic descriptors as a property.
             // Note: We cannot inherit from PartialClassExtendeeBase because we already inherit from DiagnosticAnalyzer.
-            ExtendeeBaseInternal = new PartialClassExtendeeBase(partialClassExtender, pcegDiagnostics);
+            ExtendeeBaseInternal = new PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>(partialClassExtender, diagnostics);
         }
 
         /// <summary>
@@ -84,7 +88,6 @@ namespace PartialClassExtGen.AnalyzerBase
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.RegisterSyntaxNodeAction(AnalyzeClassDeclaration, SyntaxKind.ClassDeclaration);
-            SyntaxKind.
         }
 
         /// <summary>
@@ -124,11 +127,11 @@ namespace PartialClassExtGen.AnalyzerBase
             if (!classDecl.Modifiers.Any(SyntaxKind.PartialKeyword))
             {
                 // If the class is not partial, report a diagnostic
-                var name = classSymbol.GenericQualifiedName();
+                var name = classSymbol.GetGenericQualifiedName();
                 var extensionName = extender.ExtensionName;
                 var diagnostic
                     = Diagnostic.Create(
-                        ExtendeeBase.PCEGDiagnostics.PCEG0001_Missing_Partial_Modifier,
+                        ExtendeeBase.Diagnostics.PCEG0001_Missing_Partial_Modifier,
                         classDecl.Identifier.GetLocation(),
                         name, extensionName);
                 context.ReportDiagnostic(diagnostic);

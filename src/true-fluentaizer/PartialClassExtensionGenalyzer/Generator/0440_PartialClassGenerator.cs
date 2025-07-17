@@ -11,8 +11,10 @@ namespace PartialClassExtGen.Generator
     /// <remarks>This class implements the <see cref="IIncrementalGenerator"/> interface to identify target
     /// classes based on a specified attribute and generate source code for extending those classes. It is designed to
     /// be used in source generators and integrates with the incremental generator infrastructure.</remarks>
-    public class PartialClassGenerator
+    public class PartialClassGenerator<TPartialClassExtender, TDiagnostics>
         : IIncrementalGenerator
+        where TPartialClassExtender : class, IPartialClassExtender
+        where TDiagnostics : class, IPCEGDiagnostics
     {
         /// <summary>
         /// Gets the provider responsible for identifying target classes from syntax.
@@ -37,13 +39,12 @@ namespace PartialClassExtGen.Generator
         /// <param name="extender">The extender used to provide partial class extension functionality. Cannot be <see langword="null"/>.</param>
         /// <param name="diagnostics">The diagnostics interface used for reporting errors and warnings. Cannot be <see langword="null"/>.</param>
         public PartialClassGenerator(
-            IPartialClassExtender extender,
-            IPCEGDiagnostics diagnostics
-        )
-        {
+            TPartialClassExtender extender,
+            TDiagnostics diagnostics
+        ) {
             // Initialize the class syntax provider and source output with the extender and diagnostics
-            ClassSyntaxProvider = new PartialClassSyntaxProvider(extender, diagnostics);
-            SourceOutput = new PartialSourceOutput(extender, diagnostics);
+            ClassSyntaxProvider = new PartialClassSyntaxProvider<TPartialClassExtender, TDiagnostics>(extender, diagnostics);
+            SourceOutput = new PartialSourceOutput<TPartialClassExtender, TDiagnostics>(extender, diagnostics);
 
             // Get the fully qualified name for the target attribute
             TargetAttributeFullName = extender.TargetAttribute.FullName;

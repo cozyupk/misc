@@ -72,10 +72,10 @@ namespace PartialClassExtGen.GenalyzerBase
         /// <param name="registry">An optional <see cref="HashSet{T}"/> used to register this instance for tracking. If provided, this instance
         /// will be added to the registry and automatically removed when disposed.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="parentStackedStringBuilder"/> is <see langword="null"/>.</exception>
-        public StackedStringBuilder(StackedStringBuilder parentStackedStringBuilder, HashSet<IStackedStringBuilder>? registry = null)
+        public StackedStringBuilder(StackedStringBuilder parentStackedStringBuilder)
         {
             ParentStackedStringBuilder = parentStackedStringBuilder ?? throw new ArgumentNullException(nameof(parentStackedStringBuilder), "Parent StackedStringBuilder cannot be null.");
-            Registry = registry;
+            Registry = parentStackedStringBuilder.Registry;
             Registry?.Add(this);
         }
 
@@ -205,8 +205,10 @@ namespace PartialClassExtGen.GenalyzerBase
         public override string ToString()
         {
             var sb = new StringBuilder();
-            using var dumper = new StackedStringBuilder(sb);
-            dumper.MergeFrom(Buffer, "");
+            using (var dumper = new StackedStringBuilder(sb))
+            {
+                dumper.MergeFrom(Buffer, "");
+            }
             return sb.ToString();
         }
 

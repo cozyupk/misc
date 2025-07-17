@@ -26,5 +26,17 @@ namespace PartialClassExtGen.Abstractions.Common
         /// Expected string format parameters: Exception.Message
         /// </summary>
         DiagnosticDescriptor PCEG0003_UnexpectedExceptionWhileGeneratingCode { get; }
+
+        /// <summary>
+        /// Gets the diagnostic descriptor for the warning indicating that a stacked <see cref="StringBuilder"/>
+        /// instance was detected without being properly disposed.
+        /// </summary>
+        /// <remarks>
+        /// This diagnostic indicates that the generator's internal state may be corrupted due to a 
+        /// <see cref="StringBuilder"/> instance not being disposed properly. 
+        /// Such a condition suggests a malfunction in the partial class generation process 
+        /// and may lead to incomplete or invalid code output.
+        /// </remarks>
+        DiagnosticDescriptor PCEG0001W_DetectedUndisposedStackedStringBuilderInstance { get; }
     }
 }
