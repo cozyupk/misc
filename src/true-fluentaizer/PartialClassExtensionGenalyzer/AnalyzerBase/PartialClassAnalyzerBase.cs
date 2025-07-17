@@ -4,61 +4,100 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using PartialClassExtGen.Abstractions.Common;
 using PartialClassExtGen.Utils;
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace PartialClassExtGen.AnalyzerBase
 {
+    /// <summary>
+    /// Serves as a base class for diagnostic analyzers that validate partial class declarations based on specific
+    /// attributes and requirements.
+    /// </summary>
+    /// <remarks>This class provides functionality to analyze class declarations and ensure they meet specific
+    /// criteria, such as being marked as partial when a target attribute is applied. It cannot directly inherit from
+    /// <see cref="PartialClassExtendeeBase"/> because it already inherits from <see
+    /// cref="DiagnosticAnalyzer"/>.
+    /// Note: This analyzer is not intended to be discovered by [DiagnosticAnalyzer] attribute scanning.
+    /// It is used programmatically via Roslyn source generators.</remarks>
 #pragma warning disable IDE0079 // Suppress unnecessary suppression
 #pragma warning disable RS1001 // No diagnostic analyzer attribute
 #pragma warning restore IDE0079 // Suppress unnecessary suppression
-    public class PartialClassAnalyzerBase<TTPartialClassExtender> : DiagnosticAnalyzer
-        where TTPartialClassExtender : IPartialClassExtender, new()
+    public class PartialClassAnalyzerBase : DiagnosticAnalyzer
 #pragma warning disable IDE0079 // Suppress unnecessary suppression
 #pragma warning restore RS1001 // No diagnostic analyzer attribute
 #pragma warning restore IDE0079 // Suppress unnecessary suppression
     {
         /// <summary>
-        /// Gets the static instance of the <see cref="PartialClassExtendeeBase{TTPartialClassExtender}"/>  associated
-        /// with the current partial class extender.
+        /// Gets or sets the internal base instance of the partial class extender.
         /// </summary>
-        private static PartialClassExtendeeBase<TTPartialClassExtender> ExtendeeBase { get; } = new();
+        /// <remarks>This property is intended for internal use and provides access to the base instance
+        /// of the partial class extender. It should not be accessed directly by external consumers.</remarks>
+        private PartialClassExtendeeBase? ExtendeeBaseInternal { get; set; }
 
         /// <summary>
-        /// Gets the diagnostic rule that identifies a missing partial modifier in a type.
+        /// Gets the base object used to extend the functionality of the current class.
         /// </summary>
-        private static DiagnosticDescriptor Rule { get; }
-            = PCEGDiagnosticDescriptors<TTPartialClassExtender>
-                .PCEG0001_Missing_Partial_Modifier;
+        private PartialClassExtendeeBase ExtendeeBase {
+            get
+            {
+                if (ExtendeeBaseInternal is null)
+                {
+                    throw new InvalidOperationException("ExtendeeBaseInternal is not initialized. Call InitializeExtendeeBase first.");
+                }
+                return ExtendeeBaseInternal;
+            }
+        }
 
         /// <summary>
         /// Gets the collection of <see cref="DiagnosticDescriptor"/> instances supported by this analyzer.
         /// </summary>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
+            => ImmutableArray.Create(ExtendeeBase.PCEGDiagnostics.PCEG0001_Missing_Partial_Modifier);
+
+        /// <summary>
+        /// Initializes the base class for partial class extension functionality.
+        /// </summary>
+        /// <remarks>This method sets up the internal base class for handling partial class extensions. 
+        /// It is necessary because the class cannot directly inherit from <see cref="PartialClassExtendeeBase"/>  due
+        /// to already inheriting from <see cref="DiagnosticAnalyzer"/>.</remarks>
+        /// <param name="partialClassExtender">The extender that provides additional functionality for partial classes.</param>
+        /// <param name="pcegDiagnostics">The diagnostic descriptors used for reporting diagnostics related to partial class extensions.</param>
+        public void InitializeExtendeeBase(
+            IPartialClassExtender partialClassExtender,
+            IPCEGDiagnostics pcegDiagnostics
+        ) {
+            // Initialize the base class with the provided extender and diagnostic descriptors as a property.
+            // Note: We cannot inherit from PartialClassExtendeeBase because we already inherit from DiagnosticAnalyzer.
+            ExtendeeBaseInternal = new PartialClassExtendeeBase(partialClassExtender, pcegDiagnostics);
+        }
 
         /// <summary>
         /// Initializes the analysis context for this analyzer.
         /// </summary>
-        /// <remarks>This method enables concurrent execution, disables analysis of generated code,  and
-        /// registers a syntax node action to analyze class declarations.</remarks>
-        /// <param name="context">The <see cref="AnalysisContext"/> to configure for this analyzer.</param>
+        /// <remarks>This method enables concurrent execution of the analyzer, disables analysis of
+        /// generated code,  and registers a syntax node action to analyze class declarations.</remarks>
+        /// <param name="context">The <see cref="AnalysisContext"/> to configure. This provides the mechanism for registering analysis actions
+        /// and configuring analysis behavior.</param>
         public override void Initialize(AnalysisContext context)
         {
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.RegisterSyntaxNodeAction(AnalyzeClassDeclaration, SyntaxKind.ClassDeclaration);
+            SyntaxKind.
         }
 
         /// <summary>
-        /// Analyzes a class declaration to ensure it meets specific requirements, such as having a target attribute and
-        /// being declared as partial.
+        /// Analyzes a class declaration to ensure it meets specific requirements, such as being marked as partial when
+        /// a target attribute is applied.
         /// </summary>
-        /// <remarks>This method checks if the class declaration contains a specific target attribute, as
-        /// determined by the extender's fully qualified target attribute name. If the attribute is present but the
-        /// class is not declared as partial, a diagnostic is reported.</remarks>
+        /// <remarks>This method checks if the class declaration has a specific target attribute applied,
+        /// as determined by the extender's configuration. If the target attribute is present, the method verifies that
+        /// the class is declared as partial. If the class is not partial, a diagnostic is reported to indicate the
+        /// missing partial modifier.</remarks>
         /// <param name="context">The <see cref="SyntaxNodeAnalysisContext"/> providing the context for the analysis, including the syntax
-        /// node and semantic model.</param>
-        private static void AnalyzeClassDeclaration(SyntaxNodeAnalysisContext context)
+        /// node to analyze and the semantic model for symbol resolution.</param>
+        private void AnalyzeClassDeclaration(SyntaxNodeAnalysisContext context)
         {
             // Ensure the node is a class declaration
             var classDecl = (ClassDeclarationSyntax)context.Node;
@@ -66,9 +105,12 @@ namespace PartialClassExtGen.AnalyzerBase
             if (semanticModel.GetDeclaredSymbol(classDecl) is not INamedTypeSymbol classSymbol) return;
 
             // Get the fully qualified name of the target attribute from the extender
-            var extender = ExtendeeBase.GetExtender();
+            var extender = ExtendeeBase.Extender;
+            var fullName = extender.TargetAttribute.FullName;
+            if (string.IsNullOrEmpty(fullName)) return; // fail-safe fallback
             INamedTypeSymbol? targetAttrSymbol =
                 context.SemanticModel.Compilation.GetTypeByMetadataName(extender.TargetAttribute.FullName!);
+            if (targetAttrSymbol is null) return; // fail-safe fallback
 
             // Check if the class has the target attribute
             bool hasTargetAttribute = classSymbol
@@ -76,19 +118,19 @@ namespace PartialClassExtGen.AnalyzerBase
                 .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, targetAttrSymbol));
 
             // If the class does not have the target attribute, no further action is needed
-            if (!hasTargetAttribute) return;
+            if (!hasTargetAttribute) return; // fail-safe fallback
 
             // Check if the class is declared as partial
             if (!classDecl.Modifiers.Any(SyntaxKind.PartialKeyword))
             {
                 // If the class is not partial, report a diagnostic
                 var name = classSymbol.GenericQualifiedName();
-                var ExtensionName = extender.ExtensionName;
+                var extensionName = extender.ExtensionName;
                 var diagnostic
                     = Diagnostic.Create(
-                        Rule,
+                        ExtendeeBase.PCEGDiagnostics.PCEG0001_Missing_Partial_Modifier,
                         classDecl.Identifier.GetLocation(),
-                        name, ExtensionName);
+                        name, extensionName);
                 context.ReportDiagnostic(diagnostic);
             }
         }

@@ -24,7 +24,7 @@
 		<Compile Include="..\..\PartialClassExtensionGenalyzer\Abstractions\0130_Common\*.cs" Link="Utils\PCEG.Abstractions\%(Filename)%(Extension)" />
 		<Compile Include="..\..\PartialClassExtensionGenalyzer\Utils\*.cs" Link="Utils\PCEG.Utils\%(Filename)%(Extension)" />
 		<Compile Include="..\..\PartialClassExtensionGenalyzer\AnalyzerBase\*.cs" Link="Utils\PCEG.AnalyzerBase\%(Filename)%(Extension)" />
-		<Compile Include="..\..\PartialClassExtensionGenalyzer\GeneratorBase\*.cs" Link="Utils\PCEG.GeneratorBase\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\Generator\*.cs" Link="Utils\PCEG.GeneratorBase\%(Filename)%(Extension)" />
 		<Compile Include="..\..\PartialClassExtensionGenalyzer\GenalyzerBase\*.cs" Link="Utils\PCEG.GenalyzerBase\%(Filename)%(Extension)" />
 	</ItemGroup>
 	

@@ -17,7 +17,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\AnalyzerBase\0300_AnalyzerBase.csproj" />
-	  <ProjectReference Include="..\GeneratorBase\0400_GeneratorBase.csproj" />
+	  <ProjectReference Include="..\Generator\0400_Generator.csproj" />
 	</ItemGroup>
 
 </Project>

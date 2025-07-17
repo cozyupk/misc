@@ -6,32 +6,51 @@ using PartialClassExtGen.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 
-namespace PartialClassExtGen.GeneratorBase
+namespace PartialClassExtGen.Generator
 {
     /// <summary>
-    /// Represents a source output generator that processes partial classes and generates additional source code using a
-    /// specified extender of type <typeparamref name="TPartialClassExtender"/>.
+    /// Represents a sealed implementation of a source output generator for partial classes,  providing functionality to
+    /// generate source code and report diagnostics during the process.
     /// </summary>
-    /// <remarks>This class is designed to work with the source generation infrastructure in .NET,
-    /// specifically for scenarios where partial classes need to be extended with additional functionality or generated
-    /// code. It uses the specified <typeparamref name="TPartialClassExtender"/> to perform the code generation
-    /// logic.</remarks>
-    /// <typeparam name="TPartialClassExtender">The type of the extender that provides additional functionality for handling partial classes. Must implement
-    /// <see cref="IPartialClassExtender"/> and have a parameterless constructor.</typeparam>
-    public sealed class PartialSourceOutput<TPartialClassExtender>
-        : PartialClassExtendeeBase<TPartialClassExtender>, ISourceOutput
-        where TPartialClassExtender : IPartialClassExtender, new()
+    /// <remarks>This class extends <see cref="PartialClassExtendeeBase"/> and implements <see
+    /// cref="ISourceOutput"/>  to facilitate the generation of source code for partial classes. It uses an <see
+    /// cref="IPartialClassExtender"/>  to generate the implementations and an <see cref="IPCEGDiagnostics"/>
+    /// instance to handle  diagnostic reporting. The class ensures that any exceptions or errors encountered during the
+    /// generation  process are appropriately reported as diagnostics.</remarks>
+    public sealed class PartialSourceOutput
+        : PartialClassExtendeeBase, ISourceOutput
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PartialSourceOutput"/> class.
+        /// </summary>
+        /// <param name="extender">An implementation of <see cref="IPartialClassExtender"/> used to extend the functionality of partial
+        /// classes.</param>
+        /// <param name="pcegDiagnostics">An implementation of <see cref="IPCEGDiagnostics"/> that provides diagnostic descriptors for error
+        /// reporting and analysis.</param>
+        public PartialSourceOutput(
+            IPartialClassExtender extender, IPCEGDiagnostics pcegDiagnostics
+        ) : base(extender, pcegDiagnostics)
+        {
+            // No additional initialization needed here.
+        }
+
+        /// <summary>
+        /// Generates source code for the specified target classes and reports any diagnostics encountered during the
+        /// process.
+        /// </summary>
+        /// <remarks>This method iterates through the provided target classes, generating source code for
+        /// each valid class.  If an exception occurs during the generation process for a specific class, a diagnostic
+        /// is reported using the provided <see cref="SourceProductionContext"/>.</remarks>
+        /// <param name="spc">The <see cref="SourceProductionContext"/> used to add generated source code and report diagnostics.</param>
+        /// <param name="source">A tuple containing the compilation context and an immutable array of target class metadata.  The first item
+        /// represents the <see cref="Compilation"/> object, and the second item is an array of metadata for the target
+        /// classes.</param>
         public void SourceOutput(SourceProductionContext spc, (Compilation Left, ImmutableArray<ITargetClassMeta?> Right) source)
         {
             // Get the compilation and the list of target classes
             var (compilation, targetClasses) = source;
-
-            // Create an instance of the extender
-            var extender = new TPartialClassExtender();
 
             // Output the source code for each target class with try-catch for exception handling
             // For each target class, generate the extension codes
@@ -44,16 +63,17 @@ namespace PartialClassExtGen.GeneratorBase
                 {
                     SourceOutputInternal(
                         spc, compilation, symbol,
-                        extender
+                        Extender
                     );
                 }
                 catch (Exception ex)
                 {
                     // If an exception occurs during the source output, report it
                     spc.ReportDiagnostic(Diagnostic.Create(
-                        PCEGDiagnosticDescriptors<TPartialClassExtender>
-                            .PCEG0004_UnexpectedExceptionWhileGeneratingCode(ex, extender),
-                        Location.None
+                        PCEGDiagnostics
+                            .PCEG0003_UnexpectedExceptionWhileGeneratingCode,
+                        Location.None,
+                        ex.Message
                     ));
                 }
             }
@@ -96,9 +116,11 @@ namespace PartialClassExtGen.GeneratorBase
                 {
                     // Report the diagnostic for the exception
                     spc.ReportDiagnostic(Diagnostic.Create(
-                        PCEGDiagnosticDescriptors<TPartialClassExtender>
-                            .PCEG0003_GenerateImplementations_ThrewException(symbol, ex, extender),
-                        loc
+                        PCEGDiagnostics
+                            .PCEG0002_GenerateImplementations_ThrewException,
+                        loc,
+                        symbol.GenericQualifiedName(), ex.Message
+
                     ));
                 }
                 return; // Skip to the next class if an exception was thrown

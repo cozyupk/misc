@@ -5,8 +5,8 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>9.0</LangVersion>
 		<Nullable>enable</Nullable>
-		<RootNamespace>PartialClassExtGen.GeneratorBase</RootNamespace>
-		<AssemblyName>PartialClassExtGen.GeneratorBase</AssemblyName>
+		<RootNamespace>PartialClassExtGen.Generator</RootNamespace>
+		<AssemblyName>PartialClassExtGen.Generator</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -2,7 +2,7 @@
 using PartialClassExtGen.Abstractions.Generator;
 using System;
 
-namespace PartialClassExtGen.GeneratorBase
+namespace PartialClassExtGen.Generator
 {
     public record BuilderClassMeta : ITargetClassMeta
     {

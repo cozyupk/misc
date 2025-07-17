@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,6 +15,10 @@ namespace PartialClassExtGen.Abstractions.Common
     /// a target class  and to generate the corresponding implementation code for that class.</remarks>
     public interface IPartialClassExtender
     {
+        ////////////////////////////
+        //// General Properties ////
+        ////////////////////////////
+
         /// <summary>
         /// Gets the type of the target attribute associated with this instance.
         /// </summary>
@@ -35,6 +40,10 @@ namespace PartialClassExtGen.Abstractions.Common
         /// </summary>
         string PrefixForDiagnosticId { get; }
 
+        //////////////////////////////
+        //// For Source Generator ////
+        //////////////////////////////
+
         /// <summary>
         /// Generates implementations for the specified symbol and appends them to the provided <see
         /// cref="StringBuilder"/>.
@@ -50,5 +59,18 @@ namespace PartialClassExtGen.Abstractions.Common
             Compilation compilation,
             StringBuilder sb
         );
+
+        //////////////////////
+        //// For Analyzer ////
+        //////////////////////
+
+        /// <summary>
+        /// Gets a collection of actions to analyze class declarations.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<Action<SyntaxNodeAnalysisContext>> GetAnalyzeClassDeclarations();
+        IEnumerable<DiagnosticDescriptor> GetSupportedDiagnostics();
+
+
     }
 }

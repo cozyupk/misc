@@ -4,32 +4,51 @@ using System;
 namespace PartialClassExtGen.Utils
 {
     /// <summary>
-    /// Serves as a base class for types that require an extensibility mechanism through a generic partial class
-    /// extender.
+    /// Serves as the base class for partial class extensions, providing core functionality and diagnostic support.
     /// </summary>
-    /// <remarks>This class provides a thread-safe, lazily initialized static instance of the specified
-    /// extender type.  Derived classes can use the <see cref="Extender"/> property to access the extender instance,
-    /// enabling  extensibility features without requiring direct instantiation or management of the extender.</remarks>
-    /// <typeparam name="TPartialClassExtender">The type of the partial class extender, which must implement <see cref="IPartialClassExtender"/> and have a
-    /// parameterless constructor.</typeparam>
-    public class PartialClassExtendeeBase<TPartialClassExtender>
-        where TPartialClassExtender : IPartialClassExtender, new()
+    /// <remarks>This class is designed to be extended by partial class implementations. It provides a
+    /// mechanism to integrate additional functionality through an <see cref="IPartialClassExtender"/> and supports
+    /// diagnostic handling via <see cref="IPCEGDiagnostics"/>. Both dependencies are required for proper
+    /// operation.</remarks>
+    public class PartialClassExtendeeBase
     {
         /// <summary>
-        /// Provides a lazily initialized instance of <see cref="IPartialClassExtender"/>.
+        /// Initializes a new instance of the <see cref="PartialClassExtendeeBase"/> class.
         /// </summary>
-        /// <remarks>The instance is created using a thread-safe, publication-only mode, ensuring that
-        /// only one instance is created and published, even in a multithreaded environment. This is useful for
-        /// scenarios where the initialization of the extender is expensive or should be deferred until first
-        /// use.</remarks>
-        private static readonly Lazy<IPartialClassExtender> _extender
-            = new(() => new TPartialClassExtender(), System.Threading.LazyThreadSafetyMode.PublicationOnly);
+        /// <param name="extender">The extender instance that provides additional functionality for the partial class.</param>
+        /// <param name="pcegDiagnostics">The diagnostic descriptors used for handling diagnostics in the partial class extension.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="extender"/> is <see langword="null"/> or if <paramref
+        /// name="pcegDiagnostics"/> is <see langword="null"/>.</exception>
+        public PartialClassExtendeeBase(IPartialClassExtender extender, IPCEGDiagnostics? pcegDiagnostics = null)
+        {
+            // Validate parameters to ensure they are not null and store them in properties.
+            Extender = extender ?? throw new ArgumentNullException(nameof(extender));
+            PCEGDiagnosticsInternal = pcegDiagnostics;
+        }
 
         /// <summary>
-        /// Gets the static instance of the partial class extender.
+        /// Gets the extender that provides additional functionality for partial classes.
         /// </summary>
-        protected static IPartialClassExtender Extender => _extender.Value;
+        public IPartialClassExtender Extender { get; }
 
-        public IPartialClassExtender GetExtender() => Extender;
+        /// <summary>
+        /// Gets the internal diagnostic descriptors for PCEG (Process Control Execution Graph).
+        /// </summary>
+        private IPCEGDiagnostics? PCEGDiagnosticsInternal { get; }
+
+        /// <summary>
+        /// Gets the diagnostic descriptors used for PCEG (Partial Class Extention Genalyzer).
+        /// </summary>
+        public IPCEGDiagnostics PCEGDiagnostics
+        {
+            get
+            {
+                if (PCEGDiagnosticsInternal is null)
+                {
+                    throw new InvalidOperationException("pcegDiagnosticsInternal is null. Ensure it is initialized properly.");
+                }
+                return PCEGDiagnosticsInternal;
+            }
+        }
     }
 }

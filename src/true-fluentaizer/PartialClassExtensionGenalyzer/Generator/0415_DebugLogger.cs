@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PartialClassExtGen.GeneratorBase
+namespace PartialClassExtGen.Generator
 {
 #if DEBUG
 #pragma warning disable IDE0079 // Suppress unnecessary suppression
