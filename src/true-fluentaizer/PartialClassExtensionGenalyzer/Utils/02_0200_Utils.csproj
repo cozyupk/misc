@@ -10,11 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.14.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\Abstractions\0100_Abstractions.csproj" />
+		<ProjectReference Include="..\Abstractions\02_0100_Abstractions.csproj" />
 	</ItemGroup>
 
 </Project>

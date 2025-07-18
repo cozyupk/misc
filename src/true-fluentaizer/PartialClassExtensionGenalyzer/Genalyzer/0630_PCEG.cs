@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using PartialClassExtGen.Abstractions.Common;
+using PartialClassExtGen.Abstractions.Generator;
 using PartialClassExtGen.GenalyzerBase;
 using System;
 using System.Collections.Generic;
@@ -18,12 +19,13 @@ namespace PartialClassExtGen.Genalyzer
 	/// symbols.</remarks>
 	/// <typeparam name="TAttribute">The type of attribute that identifies the target classes for partial class generation. Must derive from <see
 	/// cref="Attribute"/>.</typeparam>
-	public abstract class PCEG<TAttribute, TPartialClassExtender, TDiagnostics>
-		: VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics>, IIncrementalGenerator, IPartialClassExtender
+	public abstract class PCEG<TAttribute, TPartialClassExtender, TDiagnostics, TTargetClassMeta>
+		: VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics, TTargetClassMeta>, IIncrementalGenerator, IPartialClassExtender
 		where TAttribute : Attribute
 		where TPartialClassExtender : class, IPartialClassExtender
 		where TDiagnostics : class, IPCEGDiagnostics
-	{
+		where TTargetClassMeta : ITargetClassMeta
+    {
 		/// <summary>
 		/// Generates implementation code for a partial class extender, including using directives, header blocks,  namespace
 		/// declarations, and footer blocks, while collecting diagnostics related to the generation process.

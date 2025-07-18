@@ -24,27 +24,31 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "true-fluentaizer", "true-fl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "src\true-fluentaizer\ConsoleApp1\ConsoleApp1.csproj", "{8C6E1595-3C4F-43CB-8DEB-EE5CE152D72B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02_TrueFluentaizer", "02_TrueFluentaizer", "{63940C6B-8B2E-430A-80A2-855930A58807}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "03_TrueFluentaizer", "03_TrueFluentaizer", "{63940C6B-8B2E-430A-80A2-855930A58807}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0100_Abstractions", "src\true-fluentaizer\TrueFluentaizer\Abstractions\0100_Abstractions.csproj", "{C47392F7-377C-914C-02B3-8AAE72141C18}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "03_0100_Abstractions", "src\true-fluentaizer\TrueFluentaizer\Abstractions\03_0100_Abstractions.csproj", "{C47392F7-377C-914C-02B3-8AAE72141C18}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0200_Generators", "src\true-fluentaizer\TrueFluentaizer\Generators\0200_Generators.csproj", "{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "03_0200_Generators", "src\true-fluentaizer\TrueFluentaizer\Generators\03_0200_Generators.csproj", "{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01_PartialClassExtensionGenalyzer", "01_PartialClassExtensionGenalyzer", "{32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02_PartialClassExtensionGenalyzer", "02_PartialClassExtensionGenalyzer", "{32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9D783014-796D-4B7F-907C-E102F33D7068}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0100_Abstractions", "src\true-fluentaizer\PartialClassExtensionGenalyzer\Abstractions\0100_Abstractions.csproj", "{8D7E5CFF-7C10-6E90-75FE-9AAA931BE044}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_0300_AnalyzerBase", "src\true-fluentaizer\PartialClassExtensionGenalyzer\AnalyzerBase\02_0300_AnalyzerBase.csproj", "{F247C59E-42B9-6280-DE27-87EA6E9D998B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0300_AnalyzerBase", "src\true-fluentaizer\PartialClassExtensionGenalyzer\AnalyzerBase\0300_AnalyzerBase.csproj", "{F247C59E-42B9-6280-DE27-87EA6E9D998B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_0200_Utils", "src\true-fluentaizer\PartialClassExtensionGenalyzer\Utils\02_0200_Utils.csproj", "{EEDB4780-8EED-4DDF-B093-04E2B812C2B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0200_Utils", "src\true-fluentaizer\PartialClassExtensionGenalyzer\Utils\0200_Utils.csproj", "{EEDB4780-8EED-4DDF-B093-04E2B812C2B1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_0400_Generator", "src\true-fluentaizer\PartialClassExtensionGenalyzer\Generator\02_0400_Generator.csproj", "{4063A3F4-9A60-933E-BE62-D4F34C571B68}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0400_Generator", "src\true-fluentaizer\PartialClassExtensionGenalyzer\Generator\0400_Generator.csproj", "{4063A3F4-9A60-933E-BE62-D4F34C571B68}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_0500_GenalyzerBase", "src\true-fluentaizer\PartialClassExtensionGenalyzer\GenalyzerBase\02_0500_GenalyzerBase.csproj", "{43D9A485-2F54-011B-CF25-76D14A56D62B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0500_GenalyzerBase", "src\true-fluentaizer\PartialClassExtensionGenalyzer\GenalyzerBase\0500_GenalyzerBase.csproj", "{43D9A485-2F54-011B-CF25-76D14A56D62B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_0600_Genalyzer", "src\true-fluentaizer\PartialClassExtensionGenalyzer\Genalyzer\02_0600_Genalyzer.csproj", "{881AA081-CEB6-019E-DF8D-B9B69E9C88C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0600_Genalyzer", "src\true-fluentaizer\PartialClassExtensionGenalyzer\Genalyzer\0600_Genalyzer.csproj", "{881AA081-CEB6-019E-DF8D-B9B69E9C88C2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_9100_UnitTests", "src\true-fluentaizer\PartialClassExtensionGenalyzer\UnitTests\02_9100_UnitTests.csproj", "{C5305BBC-EF8C-44F6-ADAC-91D7F7010682}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01_CSharpExtendableExtensionGenerator", "01_CSharpExtendableExtensionGenerator", "{85D1C05C-D2F4-47C0-B72C-BF7CE4577189}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_0100_Abstractions", "src\true-fluentaizer\PartialClassExtensionGenalyzer\Abstractions\02_0100_Abstractions.csproj", "{4813D1B2-0771-CBB3-7BA5-3133FD406557}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -76,10 +80,6 @@ Global
 		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8D7E5CFF-7C10-6E90-75FE-9AAA931BE044}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8D7E5CFF-7C10-6E90-75FE-9AAA931BE044}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8D7E5CFF-7C10-6E90-75FE-9AAA931BE044}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8D7E5CFF-7C10-6E90-75FE-9AAA931BE044}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F247C59E-42B9-6280-DE27-87EA6E9D998B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F247C59E-42B9-6280-DE27-87EA6E9D998B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F247C59E-42B9-6280-DE27-87EA6E9D998B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -100,6 +100,14 @@ Global
 		{881AA081-CEB6-019E-DF8D-B9B69E9C88C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{881AA081-CEB6-019E-DF8D-B9B69E9C88C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{881AA081-CEB6-019E-DF8D-B9B69E9C88C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5305BBC-EF8C-44F6-ADAC-91D7F7010682}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5305BBC-EF8C-44F6-ADAC-91D7F7010682}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5305BBC-EF8C-44F6-ADAC-91D7F7010682}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5305BBC-EF8C-44F6-ADAC-91D7F7010682}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4813D1B2-0771-CBB3-7BA5-3133FD406557}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4813D1B2-0771-CBB3-7BA5-3133FD406557}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4813D1B2-0771-CBB3-7BA5-3133FD406557}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4813D1B2-0771-CBB3-7BA5-3133FD406557}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -113,12 +121,14 @@ Global
 		{C47392F7-377C-914C-02B3-8AAE72141C18} = {63940C6B-8B2E-430A-80A2-855930A58807}
 		{EB79CBE3-E52A-3A33-A174-0D3B761AE3A3} = {63940C6B-8B2E-430A-80A2-855930A58807}
 		{32EE7BB6-167E-4FF7-B5B3-B44F65200BD1} = {FA9C32E3-22DF-4FB5-B1A9-6F133DB7AAE8}
-		{8D7E5CFF-7C10-6E90-75FE-9AAA931BE044} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
 		{F247C59E-42B9-6280-DE27-87EA6E9D998B} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
 		{EEDB4780-8EED-4DDF-B093-04E2B812C2B1} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
 		{4063A3F4-9A60-933E-BE62-D4F34C571B68} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
 		{43D9A485-2F54-011B-CF25-76D14A56D62B} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
 		{881AA081-CEB6-019E-DF8D-B9B69E9C88C2} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
+		{C5305BBC-EF8C-44F6-ADAC-91D7F7010682} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
+		{85D1C05C-D2F4-47C0-B72C-BF7CE4577189} = {FA9C32E3-22DF-4FB5-B1A9-6F133DB7AAE8}
+		{4813D1B2-0771-CBB3-7BA5-3133FD406557} = {32EE7BB6-167E-4FF7-B5B3-B44F65200BD1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09699C21-ED43-4667-9AE5-723807C00338}

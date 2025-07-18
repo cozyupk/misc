@@ -117,16 +117,14 @@ namespace PartialClassExtGen.Genalyzer
 
         /// <summary>
         /// Merges a collection of string builder entries into the current buffer, applying indentation to the first
-        /// entry and respecting termination flags for subsequent entries.
+        /// entry and ensuring proper termination of the last entry.
         /// </summary>
-        /// <remarks>This method ensures thread safety by locking the buffer during the merge operation.
-        /// The indentation string is applied only to the first entry in the collection, and subsequent entries are
-        /// appended based on their termination flags. If an entry's termination flag is set to <see langword="true"/>,
-        /// the next entry will be treated as the start of a new logical unit and will not inherit
-        /// indentation.</remarks>
-        /// <param name="entries">A collection of <see cref="IStringBuilderEntry"/> objects to merge into the buffer. Each entry contains a
-        /// string and a termination flag indicating whether it ends a logical unit.</param>
-        /// <param name="indentUnitString">The string to prepend as indentation to the first entry in the collection, if needed.</param>
+        /// <remarks>This method processes each entry in the provided collection, appending it to the
+        /// buffer. If an entry is not  terminated, the next entry will continue on the same line. The first entry in
+        /// the collection is prefixed with  the specified <paramref name="indentUnitString"/>. If the last entry in the
+        /// collection is not terminated,  a newline is appended to ensure proper termination.</remarks>
+        /// <param name="entries">The collection of <see cref="IStringBuilderEntry"/> objects to merge into the buffer.</param>
+        /// <param name="indentUnitString">The string used to indent the first entry in the collection.</param>
         public void MergeFrom(IEnumerable<IStringBuilderEntry> entries, string indentUnitString)
         {
             lock (BufferLock)
@@ -143,6 +141,35 @@ namespace PartialClassExtGen.Genalyzer
                     Buffer.Add(new(str, entry.IsTerminated));
                     needIndent = entry.IsTerminated;
                 }
+                if (!needIndent)
+                {
+                    this.AppendLine(); // Ensure the last entry ends with a newline if not terminated
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the last entry in the buffer is terminated.
+        /// </summary>
+        /// <remarks>This method checks if the buffer is empty or if the last entry in the buffer is
+        /// marked as terminated. If the buffer is empty, the method returns <see langword="true"/>. If the buffer
+        /// contains entries, the method returns <see langword="true"/> if the last entry is terminated; otherwise, it
+        /// returns <see langword="false"/>.</remarks>
+        /// <returns><see langword="true"/> if the buffer is empty or the last entry is terminated; otherwise, <see
+        /// langword="false"/>.</returns>
+        public bool IsEndsWithTerminatedEntry()
+        {
+            lock (BufferLock)
+            {
+                if (Buffer.Count == 0)
+                {
+                    return true; // No entries to check
+                }
+                if (Buffer.Last().IsTerminated)
+                {
+                    return true; // Last entry is terminated
+                }
+                return false; // Last entry is not terminated
             }
         }
 
@@ -183,6 +210,10 @@ namespace PartialClassExtGen.Genalyzer
                             continue;
                         }
                         ParentStringBuilder.Append(entry.Str);
+                    }
+                    if (!needIndent)
+                    {
+                        ParentStringBuilder.AppendLine(); // Ensure the last entry ends with a newline if not terminated
                     }
                 }
             }

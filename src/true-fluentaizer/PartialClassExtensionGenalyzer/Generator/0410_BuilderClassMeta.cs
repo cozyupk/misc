@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using PartialClassExtGen.Abstractions.Generator;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace PartialClassExtGen.Generator
 {
@@ -27,5 +29,8 @@ namespace PartialClassExtGen.Generator
             // Store the parameters, with validation.
             Symbol = symbol ?? throw new ArgumentNullException(nameof(symbol));
         }
+
+        public ICollection<Exception> ExceptionsInGettingExtensionTarget { get; } = new List<Exception>();
+
     }
 }

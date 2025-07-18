@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace PartialClassExtGen.Genalyzer
 {
@@ -12,7 +10,7 @@ namespace PartialClassExtGen.Genalyzer
         /// <param name="sb">The <see cref="StringBuilder"/> instance to check.</param>
         /// <returns><see langword="true"/> if the content ends with a newline character (either '\n' or "\r\n"); otherwise, <see
         /// langword="false"/>.</returns>
-        public static bool EndsWithNewLine(this StringBuilder sb)
+        public static bool IsEndsWithNewLine(this StringBuilder sb)
         {
             if (sb.Length == 0) return false;
 
@@ -35,9 +33,24 @@ namespace PartialClassExtGen.Genalyzer
         /// <param name="sb">The <see cref="StringBuilder"/> instance to modify. Cannot be <see langword="null"/>.</param>
         public static void ForceBreakLine(this StringBuilder sb)
         {
-            if (!sb.EndsWithNewLine())
+            if (!sb.IsEndsWithNewLine())
             {
                 sb.AppendLine();
+            }
+        }
+
+        /// <summary>
+        /// Ensures that the current line in the <see cref="StackedStringBuilder"> is terminated with a line break.
+        /// </summary>
+        /// <remarks>If the <see cref="StackedStringBuilder"> does not already end with a terminated
+        /// entry, this method appends a line break. This ensures that subsequent entries are added on a new
+        /// line.</remarks>
+        /// <param name="ssb">The <see cref="StackedStringBuilder"> instance to operate on. Cannot be null.</param>
+        public static void ForceBreakLine(this StackedStringBuilder ssb)
+        {
+            if (!ssb.IsEndsWithTerminatedEntry())
+            {
+                ssb.AppendLine();
             }
         }
     }

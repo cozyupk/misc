@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis.Diagnostics;
 using PartialClassExtGen.Abstractions.Analyzer;
 using PartialClassExtGen.Abstractions.Common;
-using PartialClassExtGen.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -19,28 +18,6 @@ namespace PartialClassExtGen.AnalyzerBase
         where TPartialClassExtender : class, IPartialClassExtender
         where TDiagnostics : class, IPCEGDiagnostics
     {
-        /// <summary>
-        /// Gets or sets the internal base class instance for the partial class extender.
-        /// </summary>
-        /// <remarks>This property is intended for internal use and provides access to the base
-        /// functionality of the partial class extender. It may be null if the base instance has not been
-        /// initialized.</remarks>
-        private PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>? ExtendeeBaseInternal { get; set; }
-
-        /// <summary>
-        /// Gets the base instance that provides core functionality for the partial class extender.
-        /// </summary>
-        private PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics> ExtendeeBase {
-            get
-            {
-                if (ExtendeeBaseInternal is null)
-                {
-                    throw new InvalidOperationException("ExtendeeBaseInternal is not initialized. Call InitializeExtendeeBase first.");
-                }
-                return ExtendeeBaseInternal;
-            }
-        }
-
         /// <summary>
         /// Gets or sets the collection of syntax node analyzer rules.
         /// </summary>
@@ -68,29 +45,19 @@ namespace PartialClassExtGen.AnalyzerBase
         }
 
         /// <summary>
-        /// Initializes the base class for extending partial class analysis with the specified extender, diagnostics,
-        /// and analyzer rules.
+        /// Initializes the base state for an extendee by configuring the provided syntax node analyzer rules.
         /// </summary>
-        /// <remarks>This method initializes the internal state required for partial class analysis,
-        /// including the extender, diagnostics, and supported syntax node rules. The supported diagnostics are derived
-        /// from the provided rules.</remarks>
-        /// <param name="partialClassExtender">The extender instance that provides additional functionality for analyzing partial classes. Cannot be <see langword="null"/>.</param>
-        /// <param name="diagnostics">The diagnostic descriptors used to report issues during analysis. Cannot be <see langword="null"/>.</param>
-        /// <param name="analyzerRules">A collection of syntax node rules that define the analysis logic. Cannot be <see langword="null"/>.</param>
+        /// <remarks>This method processes the provided rules to aggregate their supported diagnostics,
+        /// which are then stored internally for use by the extendee. Rules with <see langword="null"/> values or
+        /// unsupported diagnostics are ignored during processing.</remarks>
+        /// <param name="analyzerRules">A collection of <see cref="ISyntaxNodeRule"/> instances that define the rules to be used for analysis. Each
+        /// rule may contribute supported diagnostics to the extendee's configuration.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="analyzerRules"/> is <see langword="null"/>.</exception>
         public void InitializeExtendeeBase(
-            TPartialClassExtender partialClassExtender,
-            TDiagnostics diagnostics,
             IEnumerable<ISyntaxNodeRule> analyzerRules
         ) {
             // Validate the parameters to ensure they are not null.
-            _ = partialClassExtender ?? throw new ArgumentNullException(nameof(partialClassExtender));
-            _ = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             AnalyzerRules = analyzerRules ?? throw new ArgumentNullException(nameof(analyzerRules));
-
-            // Initialize the base class with the provided extender and diagnostic descriptors as a property.
-            // Note: We cannot inherit from PartialClassExtendeeBase because we already inherit from DiagnosticAnalyzer.
-            ExtendeeBaseInternal = new PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>(partialClassExtender, diagnostics);
 
             // Collect supported diagnostics from rules.
             var merged = new HashSet<DiagnosticDescriptor>();

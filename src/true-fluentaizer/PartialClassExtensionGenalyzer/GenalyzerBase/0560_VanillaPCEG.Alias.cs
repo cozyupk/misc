@@ -1,4 +1,5 @@
 ﻿using PartialClassExtGen.Abstractions.Common;
+using PartialClassExtGen.Abstractions.Generator;
 using System;
 
 namespace PartialClassExtGen.GenalyzerBase
@@ -8,7 +9,7 @@ namespace PartialClassExtGen.GenalyzerBase
 	/// </summary>
 	/// <typeparam name="TAttribute">The type of attribute associated with the partial class extender. Must derive from <see cref="Attribute"/>.</typeparam>
 	public abstract partial class VanillaPCEG<TAttribute>
-		: VanillaPCEG<TAttribute, IPartialClassExtender, IPCEGDiagnostics>
+		: VanillaPCEG<TAttribute, IPartialClassExtender, IPCEGDiagnostics, ITargetClassMeta>
 		where TAttribute : Attribute
 	{
 		// Just a simple alias for the base class

@@ -11,20 +11,22 @@ namespace PartialClassExtGen.Generator
     /// <remarks>This class implements the <see cref="IIncrementalGenerator"/> interface to identify target
     /// classes based on a specified attribute and generate source code for extending those classes. It is designed to
     /// be used in source generators and integrates with the incremental generator infrastructure.</remarks>
-    public class PartialClassGenerator<TPartialClassExtender, TDiagnostics>
+    public class PartialClassGenerator<TPartialClassExtender, TDiagnostics, TTargetClassMeta>
         : IIncrementalGenerator
         where TPartialClassExtender : class, IPartialClassExtender
         where TDiagnostics : class, IPCEGDiagnostics
+        where TTargetClassMeta : ITargetClassMeta
     {
         /// <summary>
         /// Gets the provider responsible for identifying target classes from syntax.
         /// </summary>
-        private IClassSyntaxProvider ClassSyntaxProvider { get; }
+        private IClassSyntaxProvider<TTargetClassMeta> ClassSyntaxProvider { get; }
+
 
         /// <summary>
         /// Gets the source output processor responsible for generating implementation code.
         /// </summary>
-        private ISourceOutput SourceOutput { get; }
+        private ISourceOutput<TTargetClassMeta> SourceOutput { get; }
 
         /// <summary>
         /// Gets the fully qualified name of the target attribute.
@@ -43,11 +45,28 @@ namespace PartialClassExtGen.Generator
             TDiagnostics diagnostics
         ) {
             // Initialize the class syntax provider and source output with the extender and diagnostics
-            ClassSyntaxProvider = new PartialClassSyntaxProvider<TPartialClassExtender, TDiagnostics>(extender, diagnostics);
-            SourceOutput = new PartialSourceOutput<TPartialClassExtender, TDiagnostics>(extender, diagnostics);
+            ClassSyntaxProvider = CreateClassSyntaxProvider(extender, diagnostics);
+            SourceOutput = CreateSourceOutput(extender, diagnostics);
 
             // Get the fully qualified name for the target attribute
             TargetAttributeFullName = extender.TargetAttribute.FullName;
+        }
+
+        /// <summary>
+        /// Creates and returns an instance of a class syntax provider for handling partial class extensions.
+        /// </summary>
+        /// <param name="extender">The partial class extender used to provide additional functionality for the target class.</param>
+        /// <param name="diagnostics">The diagnostics object used to report errors, warnings, or other messages during processing.</param>
+        /// <returns>An instance of <see cref="IClassSyntaxProvider{TTargetClassMeta}"/> configured with the specified extender
+        /// and diagnostics.</returns>
+        protected virtual IClassSyntaxProvider<TTargetClassMeta> CreateClassSyntaxProvider(TPartialClassExtender extender, TDiagnostics diagnostics)
+        {
+            return new PartialClassSyntaxProvider<TPartialClassExtender, TDiagnostics, TTargetClassMeta>(extender, diagnostics);
+        }
+
+        protected virtual ISourceOutput<TTargetClassMeta> CreateSourceOutput(TPartialClassExtender extender, TDiagnostics diagnostics)
+        {
+            return new PartialSourceOutput<TPartialClassExtender, TDiagnostics, TTargetClassMeta>(extender, diagnostics);
         }
 
         /// <summary>

@@ -8,11 +8,20 @@
 		<OutputItemType>Analyzer</OutputItemType>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-		<RootNamespace>PartialClassExtGen.Genalyzer</RootNamespace>
+		<RootNamespace>PartialClassExtGen.GenalyzerBase</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\GenalyzerBase\0500_GenalyzerBase.csproj" />
+	  <Compile Remove="0560_VanillaPCEG.Alias.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="0560_VanillaPCEG.Alias.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\AnalyzerBase\02_0300_AnalyzerBase.csproj" />
+	  <ProjectReference Include="..\Generator\02_0400_Generator.csproj" />
 	</ItemGroup>
 
 </Project>

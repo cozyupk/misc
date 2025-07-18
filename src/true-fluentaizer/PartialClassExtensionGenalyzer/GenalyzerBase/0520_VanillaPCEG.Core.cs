@@ -1,10 +1,10 @@
 ﻿using Microsoft.CodeAnalysis;
 using PartialClassExtGen.Abstractions.Analyzer;
 using PartialClassExtGen.Abstractions.Common;
+using PartialClassExtGen.Abstractions.Generator;
 using PartialClassExtGen.AnalyzerBase;
 using PartialClassExtGen.Generator;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace PartialClassExtGen.GenalyzerBase
@@ -19,11 +19,12 @@ namespace PartialClassExtGen.GenalyzerBase
     /// symbols.</remarks>
     /// <typeparam name="TAttribute">The type of attribute that identifies the target classes for partial class generation. Must derive from <see
     /// cref="Attribute"/>.</typeparam>
-    public abstract partial class VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics>
+    public abstract partial class VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics, TTargetClassMeta>
         : ExtendedAnalyzerBase<TPartialClassExtender, TDiagnostics>, IIncrementalGenerator, IPartialClassExtender
         where TAttribute : Attribute
         where TPartialClassExtender : class, IPartialClassExtender
         where TDiagnostics : class, IPCEGDiagnostics
+        where TTargetClassMeta : ITargetClassMeta
     {
         /// <summary>
         /// Gets the type of the target attribute associated with this instance.
@@ -73,7 +74,7 @@ namespace PartialClassExtGen.GenalyzerBase
                 extender, diagnostics
             );
             InitializeAnalyzerBase(
-                extender, diagnostics, analyzerRules
+                analyzerRules
             );
         }
 
@@ -91,7 +92,7 @@ namespace PartialClassExtGen.GenalyzerBase
             if (this is not TPartialClassExtender retval)
             {
                 throw new InvalidCastException(
-                    $"Cannot cast {nameof(VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics>)} to {typeof(TPartialClassExtender).FullName}. " +
+                    $"Cannot cast {nameof(VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics, TTargetClassMeta>)} to {typeof(TPartialClassExtender).FullName}. " +
                     "Please implement {typeof(TPartialClassExtender).FullName on yout derived class to satisfy correct type."
                 );
             }
@@ -132,21 +133,25 @@ namespace PartialClassExtGen.GenalyzerBase
         )
         {
             // Create a new instance of the generator.
-            return new PartialClassGenerator<TPartialClassExtender, TDiagnostics>(extender, diagnostics);
+            return new PartialClassGenerator<TPartialClassExtender, TDiagnostics, TTargetClassMeta>(extender, diagnostics);
         }
 
+        /// <summary>
+        /// Initializes the analyzer with the specified syntax node rules.
+        /// </summary>
+        /// <param name="analyzerRules">A collection of syntax node rules to be used by the analyzer.  This parameter cannot be <see
+        /// langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="analyzerRules"/> is <see langword="null"/>.</exception>
         protected virtual void InitializeAnalyzerBase(
-            TPartialClassExtender extender, TDiagnostics diagnostics, IEnumerable<ISyntaxNodeRule> analyzerRules
+            IEnumerable<ISyntaxNodeRule> analyzerRules
         )
         {
             // Validate the parameters are not null.
-            _ = extender ?? throw new ArgumentNullException(nameof(extender));
-            _ = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             _ = analyzerRules ?? throw new ArgumentNullException(nameof(analyzerRules));
 
             // Initizalize parent class, implementing DiagnosticAnalyzer, using the extender and diagnostics.
             InitializeExtendeeBase(
-                extender, diagnostics, analyzerRules
+                analyzerRules
             );
         }
 

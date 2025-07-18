@@ -9,7 +9,8 @@ namespace PartialClassExtGen.Abstractions.Generator
     /// <remarks>Implementations of this interface are responsible for producing source code by analyzing the
     /// provided compilation and metadata. The generated source code is added to the context, and any diagnostics
     /// encountered during the process can also be reported through the context.</remarks>
-    public interface ISourceOutput
+    public interface ISourceOutput<TTargetClassMeta>
+        where TTargetClassMeta : ITargetClassMeta
     {
         /// <summary>
         /// Generates source code based on the provided compilation and metadata.
@@ -20,7 +21,7 @@ namespace PartialClassExtGen.Abstractions.Generator
         /// which may include null values.</param>
         void SourceOutput(
             SourceProductionContext spc,
-            (Compilation Left, ImmutableArray<ITargetClassMeta?> Right) source
+            (Compilation Left, ImmutableArray<TTargetClassMeta?> Right) source
         );
     }
 }

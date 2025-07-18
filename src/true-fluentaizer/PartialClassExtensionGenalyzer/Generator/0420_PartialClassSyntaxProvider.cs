@@ -15,10 +15,11 @@ namespace PartialClassExtGen.Generator
     /// implementation of <see cref="IPartialClassExtender"/> to extend functionality and <see
     /// cref="IPCEGDiagnostics"/> to report diagnostics. It identifies target metadata for extension methods
     /// and facilitates metadata retrieval for partial class generation.</remarks>
-    public sealed class PartialClassSyntaxProvider<TPartialClassExtender, TDiagnostics>
-        : PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>, IClassSyntaxProvider
+    public class PartialClassSyntaxProvider<TPartialClassExtender, TDiagnostics, TTargetClassMeta>
+        : PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>, IClassSyntaxProvider<TTargetClassMeta>
         where TPartialClassExtender : class, IPartialClassExtender
         where TDiagnostics : class, IPCEGDiagnostics
+        where TTargetClassMeta : ITargetClassMeta
     {
         /// <summary>
         /// Gets the fully qualified metadata name via <see cref="Type"/> for Roslyn's metadata-based filtering.
@@ -47,15 +48,22 @@ namespace PartialClassExtGen.Generator
         /// associated semantic model.</param>
         /// <returns>An instance of <see cref="ITargetClassMeta"/> representing the metadata of the target class, or <see
         /// langword="null"/> if the target node is not a valid class declaration or its symbol cannot be resolved.</returns>
-        public ITargetClassMeta? GetExtensionTarget(GeneratorAttributeSyntaxContext context)
+        public virtual TTargetClassMeta? GetExtensionTarget(GeneratorAttributeSyntaxContext context)
         {
             // Ensure the node is a class declaration
             var classDecl = (ClassDeclarationSyntax)context.TargetNode;
             if (context.SemanticModel.GetDeclaredSymbol(classDecl) is not INamedTypeSymbol symbol)
-                return null;
+                return default;
 
             // Return a new instance of BuilderClassMeta with the symbol
-            return new BuilderClassMeta(symbol);
+            if (new BuilderClassMeta(symbol) is not TTargetClassMeta retval)
+            {
+                throw new InvalidOperationException(
+                    $"The type {typeof(TTargetClassMeta).FullName} is not compatible with BuilderClassMeta. " 
+                    + "Please override GetExtensionTarget method in the derived class. "
+                );
+            }
+            return retval;
         }
     }
 }

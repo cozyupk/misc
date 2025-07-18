@@ -19,10 +19,11 @@ namespace PartialClassExtGen.Generator
     /// cref="IPartialClassExtender"/>  to generate the implementations and an <see cref="IPCEGDiagnostics"/>
     /// instance to handle  diagnostic reporting. The class ensures that any exceptions or errors encountered during the
     /// generation  process are appropriately reported as diagnostics.</remarks>
-    public sealed class PartialSourceOutput<TPartialClassExtender, TDiagnostics>
-        : PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>, ISourceOutput
+    public sealed class PartialSourceOutput<TPartialClassExtender, TDiagnostics, TTargetClassMeta>
+        : PartialClassExtendeeBase<TPartialClassExtender, TDiagnostics>, ISourceOutput<TTargetClassMeta>
         where TPartialClassExtender : class, IPartialClassExtender
         where TDiagnostics : class, IPCEGDiagnostics
+        where TTargetClassMeta : ITargetClassMeta
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="PartialSourceOutput{TPartialClassExtender, TPCEGDiagnostics}"/>
@@ -48,7 +49,7 @@ namespace PartialClassExtGen.Generator
         /// <param name="source">A tuple containing the compilation context and an immutable array of target class metadata.  The first item
         /// represents the <see cref="Compilation"/> object, and the second item is an array of metadata for the target
         /// classes.</param>
-        public void SourceOutput(SourceProductionContext spc, (Compilation Left, ImmutableArray<ITargetClassMeta?> Right) source)
+        public void SourceOutput(SourceProductionContext spc, (Compilation Left, ImmutableArray<TTargetClassMeta?> Right) source)
         {
             // Get the compilation and the list of target classes
             var (compilation, targetClasses) = source;

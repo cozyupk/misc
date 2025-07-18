@@ -47,5 +47,11 @@ namespace PartialClassExtGen.Abstractions.Common
         /// <param name="entries">A collection of <see cref="IStringBuilderEntry"/> objects to merge. Cannot be null.</param>
         /// <param name="indentUnitString">The string representing a single unit of indentation to apply. Cannot be null or empty.</param>
         void MergeFrom(IEnumerable<IStringBuilderEntry> entries, string indentUnitString);
+
+        /// <summary>
+        /// Determines whether the current entry ends with a termination marker.
+        /// </summary>
+        /// <returns><see langword="true"/> if the entry ends with a termination marker; otherwise, <see langword="false"/>.</returns>
+        bool IsEndsWithTerminatedEntry();
     }
 }

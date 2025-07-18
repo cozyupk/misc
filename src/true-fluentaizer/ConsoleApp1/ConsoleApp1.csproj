@@ -8,8 +8,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\TrueFluentaizer\Abstractions\0100_Abstractions.csproj" />
-		<ProjectReference Include="..\TrueFluentaizer\Generators\0200_Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\TrueFluentaizer\Abstractions\03_0100_Abstractions.csproj" />
+		<ProjectReference Include="..\TrueFluentaizer\Generators\03_0200_Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 
 </Project>

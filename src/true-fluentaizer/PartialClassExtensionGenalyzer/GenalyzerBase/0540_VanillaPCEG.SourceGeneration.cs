@@ -17,7 +17,7 @@ namespace PartialClassExtGen.GenalyzerBase
 	/// symbols.</remarks>
 	/// <typeparam name="TAttribute">The type of attribute that identifies the target classes for partial class generation. Must derive from <see
 	/// cref="Attribute"/>.</typeparam>
-	partial class VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics>
+	partial class VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics, TTargetClassMeta>
 	{
 		/// <summary>
 		/// Generates implementations for the specified partial class extender and diagnostics provider.
