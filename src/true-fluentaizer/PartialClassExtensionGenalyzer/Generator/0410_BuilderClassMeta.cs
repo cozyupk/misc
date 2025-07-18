@@ -4,6 +4,12 @@ using System;
 
 namespace PartialClassExtGen.Generator
 {
+    /// <summary>
+    /// Represents metadata for a builder class, including the symbol of the named type in the source code.
+    /// </summary>
+    /// <remarks>This class provides information about a builder class, encapsulating its associated symbol.
+    /// It is primarily used for code generation scenarios where metadata about the builder class is
+    /// required.</remarks>
     public record BuilderClassMeta : ITargetClassMeta
     {
         /// <summary>

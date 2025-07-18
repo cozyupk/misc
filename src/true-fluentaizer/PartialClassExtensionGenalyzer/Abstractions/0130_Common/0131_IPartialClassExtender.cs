@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using PartialClassExtGen.Abstractions.Analyzer;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -72,14 +73,19 @@ namespace PartialClassExtGen.Abstractions.Common
         //// For Analyzer ////
         //////////////////////
 
-        /*
         /// <summary>
-        /// Gets a collection of actions to analyze class declarations.
+        /// Retrieves a collection of syntax node rules to be applied during analysis.
         /// </summary>
-        /// <returns></returns>
-        IEnumerable<Action<SyntaxNodeAnalysisContext>> GetAnalyzeClassDeclarations();
-        IEnumerable<DiagnosticDescriptor> GetSupportedDiagnostics();
-        */
-
+        /// <typeparam name="TArgPartialClassExtender">The type of the partial class extender, which must implement <see cref="IPartialClassExtender"/>.</typeparam>
+        /// <typeparam name="TArgDiagnostics">The type of the diagnostics provider, which must implement <see cref="IPCEGDiagnostics"/>.</typeparam>
+        /// <param name="extender">An instance of <typeparamref name="TArgPartialClassExtender"/> used to extend partial class functionality.</param>
+        /// <param name="diagnostics">An instance of <typeparamref name="TArgDiagnostics"/> used to report diagnostics during analysis.</param>
+        /// <returns>An enumerable collection of <see cref="ISyntaxNodeRule"/> objects representing the rules to be applied.</returns>
+        IEnumerable<ISyntaxNodeRule> GetSyntaxNodeRulesInternal<TArgPartialClassExtender, TArgDiagnostics>(
+            TArgPartialClassExtender extender,
+            TArgDiagnostics diagnostics
+        )
+            where TArgPartialClassExtender : class, IPartialClassExtender
+            where TArgDiagnostics : class, IPCEGDiagnostics;
     }
 }

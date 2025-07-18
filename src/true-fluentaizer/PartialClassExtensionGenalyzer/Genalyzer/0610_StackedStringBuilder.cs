@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace PartialClassExtGen.GenalyzerBase
+namespace PartialClassExtGen.Genalyzer
 {
     /// <summary>
     /// Provides a hierarchical, thread-safe string-building utility that supports nested string builders and
@@ -16,7 +16,7 @@ namespace PartialClassExtGen.GenalyzerBase
     /// construction by maintaining a buffer of string entries, each of which can be marked as terminated. It supports
     /// hierarchical string building through parent-child relationships, enabling nested or scoped string operations.
     /// This class is thread-safe and ensures atomic updates to the internal buffer.</remarks>
-    public class StackedStringBuilder : IDisposable, IStackedStringBuilder
+    public class StackedStringBuilder : IStackedStringBuilder
     {
         /// <summary>
         /// Gets the registry of stacked string builders.

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PartialClassExtGen.Abstractions.Common
 {
@@ -8,7 +9,7 @@ namespace PartialClassExtGen.Abstractions.Common
     /// </summary>
     /// <remarks>This interface is designed for scenarios where strings need to be built in a structured  or
     /// hierarchical manner, such as generating nested text or code with consistent indentation.</remarks>
-    public interface IStackedStringBuilder
+    public interface IStackedStringBuilder : IDisposable
     {
         /// <summary>
         /// Gets the registry of stacked string builders.

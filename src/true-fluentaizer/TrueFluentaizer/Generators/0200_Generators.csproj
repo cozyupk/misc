@@ -26,6 +26,7 @@
 		<Compile Include="..\..\PartialClassExtensionGenalyzer\AnalyzerBase\*.cs" Link="Utils\PCEG.AnalyzerBase\%(Filename)%(Extension)" />
 		<Compile Include="..\..\PartialClassExtensionGenalyzer\Generator\*.cs" Link="Utils\PCEG.GeneratorBase\%(Filename)%(Extension)" />
 		<Compile Include="..\..\PartialClassExtensionGenalyzer\GenalyzerBase\*.cs" Link="Utils\PCEG.GenalyzerBase\%(Filename)%(Extension)" />
+		<Compile Include="..\..\PartialClassExtensionGenalyzer\Genalyzer\*.cs" Link="Utils\PCEG.Genalyzer\%(Filename)%(Extension)" />
 	</ItemGroup>
 	
 </Project>

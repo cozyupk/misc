@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>9.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<OutputItemType>Analyzer</OutputItemType>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<RootNamespace>PartialClassExtGen.Genalyzer</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\GenalyzerBase\0500_GenalyzerBase.csproj" />
+	</ItemGroup>
+
+</Project>

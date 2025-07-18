@@ -12,11 +12,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="0550_VanillaPCEG.Alias.cs" />
+	  <Compile Remove="0560_VanillaPCEG.Alias.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="0550_VanillaPCEG.Alias.cs" />
+	  <None Include="0560_VanillaPCEG.Alias.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

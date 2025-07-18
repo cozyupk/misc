@@ -1,11 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
+using PartialClassExtGen.Abstractions.Analyzer;
 using PartialClassExtGen.Abstractions.Common;
 using PartialClassExtGen.AnalyzerBase;
 using PartialClassExtGen.Generator;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 
 namespace PartialClassExtGen.GenalyzerBase
 {
@@ -20,7 +20,7 @@ namespace PartialClassExtGen.GenalyzerBase
     /// <typeparam name="TAttribute">The type of attribute that identifies the target classes for partial class generation. Must derive from <see
     /// cref="Attribute"/>.</typeparam>
     public abstract partial class VanillaPCEG<TAttribute, TPartialClassExtender, TDiagnostics>
-        : PartialClassAnalyzerBase<TPartialClassExtender, TDiagnostics>, IIncrementalGenerator, IPartialClassExtender
+        : ExtendedAnalyzerBase<TPartialClassExtender, TDiagnostics>, IIncrementalGenerator, IPartialClassExtender
         where TAttribute : Attribute
         where TPartialClassExtender : class, IPartialClassExtender
         where TDiagnostics : class, IPCEGDiagnostics
@@ -35,7 +35,21 @@ namespace PartialClassExtGen.GenalyzerBase
         /// </summary>
         IIncrementalGenerator Generator { get; }
 
-        private int _isGeneratingImplementetions = 0;
+        /// <summary>
+        /// Indicates whether the process of generating implementations is currently running.
+        /// </summary>
+        /// <remarks>This field is used internally to track the state of the implementation generation
+        /// process. A value of 0 indicates that the process is not running, while a non-zero value indicates that it is
+        /// active.</remarks>
+        private int _isGeneratingImplementetionsRunning = 0;
+
+        /// <summary>
+        /// Indicates whether the process of retrieving syntax node rules is currently running.
+        /// </summary>
+        /// <remarks>This field is used internally to track the state of the syntax node rules retrieval
+        /// process. A value of 0 indicates that the process is not running, while a non-zero value indicates that it is
+        /// active.</remarks>
+        private int _isGetSyntaxNodeRulesRunning = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VanillaPCEG "/> class.
@@ -55,8 +69,11 @@ namespace PartialClassExtGen.GenalyzerBase
             );
 
             // Initialize the base class for partial class extension functionality.
-            InitializeAnalyzerBase(
+            var analyzerRules = GetSyntaxNodeRulesInternal(
                 extender, diagnostics
+            );
+            InitializeAnalyzerBase(
+                extender, diagnostics, analyzerRules
             );
         }
 
@@ -118,19 +135,18 @@ namespace PartialClassExtGen.GenalyzerBase
             return new PartialClassGenerator<TPartialClassExtender, TDiagnostics>(extender, diagnostics);
         }
 
-        /// <summary>
-        /// Initializes the base class for partial class extension functionality.
-        /// </summary>
-        /// <remarks>This method is intended to be overridden in derived classes to provide custom initialization logic for the analyzer base.</remarks>
-        /// <param name="extender"> The extender that provides additional functionality for partial classes. Cannot be <see langword="null"/>.</param>
-        /// <param name="diagnostics"> The diagnostics interface used for reporting errors and warnings. Cannot be <see langword="null"/>.</param>
         protected virtual void InitializeAnalyzerBase(
-            TPartialClassExtender extender, TDiagnostics diagnostics
+            TPartialClassExtender extender, TDiagnostics diagnostics, IEnumerable<ISyntaxNodeRule> analyzerRules
         )
         {
+            // Validate the parameters are not null.
+            _ = extender ?? throw new ArgumentNullException(nameof(extender));
+            _ = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
+            _ = analyzerRules ?? throw new ArgumentNullException(nameof(analyzerRules));
+
             // Initizalize parent class, implementing DiagnosticAnalyzer, using the extender and diagnostics.
             InitializeExtendeeBase(
-                extender, diagnostics
+                extender, diagnostics, analyzerRules
             );
         }
 
@@ -144,85 +160,5 @@ namespace PartialClassExtGen.GenalyzerBase
         {
             Generator.Initialize(context);
         }
-
-        /// <summary>
-        /// Generates implementations for the specified partial class extender and diagnostics provider.
-        /// </summary>
-        /// <remarks>This method validates the provided extender and diagnostics instances to ensure they
-        /// match the expected types. It then delegates the implementation generation to the abstract
-        /// <c>GenerateImplementations</c> method.</remarks>
-        /// <typeparam name="TArgPartialClassExtender">The type of the partial class extender, which must implement <see cref="IPartialClassExtender"/>.</typeparam>
-        /// <typeparam name="TArgDiagnostics">The type of the diagnostics provider, which must implement <see cref="IPCEGDiagnostics"/>.</typeparam>
-        /// <param name="extender">The partial class extender used to generate implementations. Must be of type <typeparamref
-        /// name="TArgPartialClassExtender"/>.</param>
-        /// <param name="diagnostics">The diagnostics provider used to report issues during generation. Must be of type <typeparamref
-        /// name="TArgDiagnostics"/>.</param>
-        /// <param name="symbol">The named type symbol representing the class or interface for which implementations are being generated.</param>
-        /// <param name="compilation">The current compilation context, providing access to semantic and syntactic information.</param>
-        /// <param name="sb">A <see cref="StringBuilder"/> instance used to construct the generated code.</param>
-        /// <returns>A collection of <see cref="Diagnostic"/> objects representing any issues encountered during the generation
-        /// process. Returns <see langword="null"/> if no diagnostics are produced.</returns>
-        /// <exception cref="ArgumentException">Thrown if <paramref name="extender"/> is not of type <typeparamref name="TArgPartialClassExtender"/> or if
-        /// <paramref name="diagnostics"/> is not of type <typeparamref name="TArgDiagnostics"/>.</exception>
-        public virtual IEnumerable<Diagnostic>? GenerateImplementationsInternal<TArgPartialClassExtender, TArgDiagnostics>(
-            TArgPartialClassExtender extender,
-            TArgDiagnostics diagnostics,
-            INamedTypeSymbol symbol,
-            Compilation compilation,
-            StringBuilder sb
-        )
-            where TArgPartialClassExtender : class, IPartialClassExtender
-            where TArgDiagnostics : class, IPCEGDiagnostics
-        {
-            if (Interlocked.Exchange(ref _isGeneratingImplementetions, 1) != 0)
-            {
-                throw new InvalidOperationException("GenerateImplementationsInternal is already in progress. This method is not re-entrant.");
-            }
-
-            try
-            {
-
-                // Validate extender and diagnostics parameters for safe-guard.
-                if (extender is not TPartialClassExtender validExtender)
-                {
-                    throw new ArgumentException($"Extender must be of type {typeof(TPartialClassExtender).FullName}.", nameof(extender));
-                }
-                if (diagnostics is not TDiagnostics validDiagnostics)
-                {
-                    throw new ArgumentException($"Diagnostics must be of type {typeof(TDiagnostics).FullName}.", nameof(diagnostics));
-                }
-
-                // Invoke the abstract method to generate implementations.
-                return GenerateImplementations(
-                    validExtender, validDiagnostics, symbol, compilation, sb
-                );
-            }
-            finally
-            {
-                // Reset the flag to allow future calls.
-                Interlocked.Exchange(ref _isGeneratingImplementetions, 0);
-            }
-        }
-
-        /// <summary>
-        /// Generates implementations for the specified partial class extender.
-        /// </summary>
-        /// <remarks>This method is abstract and must be implemented by a derived class. It is responsible
-        /// for generating code implementations based on the provided extender, diagnostics, type symbol, and
-        /// compilation context.</remarks>
-        /// <param name="extender">The partial class extender that provides context and functionality for generating implementations.</param>
-        /// <param name="diagnostics">The diagnostics object used to report issues or warnings during the generation process.</param>
-        /// <param name="symbol">The named type symbol representing the class or type for which implementations are being generated.</param>
-        /// <param name="compilation">The current compilation context, providing access to semantic and syntactic information.</param>
-        /// <param name="sb">A <see cref="StringBuilder"/> instance used to append generated code.</param>
-        /// <returns>A collection of <see cref="Diagnostic"/> objects representing any issues or warnings encountered during the
-        /// generation process, or <see langword="null"/> if no diagnostics are produced.</returns>
-        public abstract IEnumerable<Diagnostic>? GenerateImplementations(
-            TPartialClassExtender extender,
-            TDiagnostics diagnostics,
-            INamedTypeSymbol symbol,
-            Compilation compilation,
-            StringBuilder sb
-        );
     }
 }

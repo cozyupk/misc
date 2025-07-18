@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using PartialClassExtGen.Abstractions.Common;
-using PartialClassExtGen.GenalyzerBase;
+using PartialClassExtGen.Genalyzer;
 using System.Collections.Generic;
 using TrueFluentaizer.Abstractions;
 
@@ -15,7 +15,7 @@ namespace TrueFluentaizer.Generators
         public override IEnumerable<Diagnostic>? DefineImplementationsInNamespace(IPartialClassExtender extender, IPCEGDiagnostics diagnostics, INamedTypeSymbol symbol, Compilation compilation, StackedStringBuilder ssb)
         {
             ssb.AppendLine("// This method should be overridden to provide specific implementation logic for generating fluent builder code.");
-            var nssb = ssb.SpawnChild();
+            using var nssb = ssb.SpawnChild();
             nssb.Append("// Placeholder for fluent builder implementation logic.");
             nssb.Append("// Placeholder for fluent builder implementation logic.");
             // Implementation logic goes here

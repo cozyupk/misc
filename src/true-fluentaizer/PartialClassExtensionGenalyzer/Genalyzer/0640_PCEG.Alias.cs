@@ -1,7 +1,7 @@
 ﻿using PartialClassExtGen.Abstractions.Common;
 using System;
 
-namespace PartialClassExtGen.GenalyzerBase
+namespace PartialClassExtGen.Genalyzer
 {
     /// <summary>
     /// Represents a partial class extender generator that operates on attributes of type <typeparamref name="TAttribute"/>.

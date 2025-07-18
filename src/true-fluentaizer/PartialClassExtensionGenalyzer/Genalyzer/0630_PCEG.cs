@@ -1,11 +1,12 @@
 ﻿using Microsoft.CodeAnalysis;
 using PartialClassExtGen.Abstractions.Common;
+using PartialClassExtGen.GenalyzerBase;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace PartialClassExtGen.GenalyzerBase
+namespace PartialClassExtGen.Genalyzer
 {
 	/// <summary>
 	/// Provides a base class for generating partial class implementations using a specified attribute type.
@@ -69,6 +70,7 @@ namespace PartialClassExtGen.GenalyzerBase
 			{
                 resultDiagnostics.AddRange(headerDiagnostics);
             }
+            sb.ForceBreakLine();
 
             // Generate Namespace opening declaration
             sb.AppendLine($"namespace {symbol.ContainingNamespace.ToDisplayString()} {{");
@@ -85,8 +87,9 @@ namespace PartialClassExtGen.GenalyzerBase
 					resultDiagnostics.AddRange(retval);
 				}
 			}
+            sb.ForceBreakLine();
 
-			// Generate Namespace closing declaration
+            // Generate Namespace closing declaration
 			sb.AppendLine("}");
 
             // Generate Footer Blocks
@@ -95,6 +98,7 @@ namespace PartialClassExtGen.GenalyzerBase
             {
                 resultDiagnostics.AddRange(footerDiagnostics);
             }
+            sb.ForceBreakLine();
 
             // Check StringBuilderRegistry for any issues or diagnostics
             // and report them as warnings if necessary.
