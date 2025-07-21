@@ -5,8 +5,8 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>9.0</LangVersion>
 		<Nullable>enable</Nullable>
-		<RootNamespace>PartialClassExtGen.Utils</RootNamespace>
-		<AssemblyName>PartialClassExtGen.Utils</AssemblyName>
+		<RootNamespace>Boostable.CodeBuilding.Core</RootNamespace>
+		<AssemblyName>Boostable.CodeBuilding.Core</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>

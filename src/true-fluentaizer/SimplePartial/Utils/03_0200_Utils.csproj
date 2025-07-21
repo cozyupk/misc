@@ -5,12 +5,12 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>9.0</LangVersion>
 		<Nullable>enable</Nullable>
-		<RootNamespace>PartialClassExtGen.AnalyzerBase</RootNamespace>
-		<AssemblyName>PartialClassExtGen.AnalyzerBase</AssemblyName>
+		<RootNamespace>PartialClassExtGen.Utils</RootNamespace>
+		<AssemblyName>PartialClassExtGen.Utils</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Utils\02_0200_Utils.csproj" />
+		<ProjectReference Include="..\Abstractions\03_0100_Abstractions.csproj" />
 	</ItemGroup>
 
 </Project>

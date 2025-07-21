@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Utils\02_0200_Utils.csproj" />
+	  <ProjectReference Include="..\Utils\03_0200_Utils.csproj" />
 	</ItemGroup>
 
 </Project>

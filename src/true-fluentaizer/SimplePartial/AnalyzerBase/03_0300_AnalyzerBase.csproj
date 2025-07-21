@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>9.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<RootNamespace>PartialClassExtGen.AnalyzerBase</RootNamespace>
+		<AssemblyName>PartialClassExtGen.AnalyzerBase</AssemblyName>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Utils\03_0200_Utils.csproj" />
+	</ItemGroup>
+
+</Project>

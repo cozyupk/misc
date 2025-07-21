@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Abstractions\01_0100_Abstractions.csproj" />
+	  <ProjectReference Include="..\Abstractions\03_0100_Abstractions.csproj" />
 	</ItemGroup>
 
 </Project>
