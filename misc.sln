@@ -11,6 +11,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "task-continuation-probe", "task-continuation-probe", "{DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}"
 	ProjectSection(SolutionItems) = preProject
 		src\task-continuation-probe\README.md = src\task-continuation-probe\README.md
+		README.Ultimate.md = README.Ultimate.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0000_Probe", "src\task-continuation-probe\Probe\0000_Probe.csproj", "{D4CBEDA7-2BDC-0002-4B1E-201CD3FB8CEE}"
