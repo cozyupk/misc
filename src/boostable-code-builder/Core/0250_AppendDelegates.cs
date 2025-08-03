@@ -44,10 +44,10 @@ namespace Boostable.CodeBuilding.Core
 
             // Initialize Append and AppendLine actions based on whether a previous composer is provided.
             Append = prevCodeComposer != null
-                ? s => prevCodeComposer.Append(s)
+                ? s => prevCodeComposer.AppendFragment(s)
                 : s => defaultStringBuilder?.Append(s);
             AppendLine = prevCodeComposer != null
-                ? s => prevCodeComposer.AppendLine(s)
+                ? s => prevCodeComposer.AppendTerminatedFragment(s)
                 : s => defaultStringBuilder?.AppendLine(s);
         }
     }

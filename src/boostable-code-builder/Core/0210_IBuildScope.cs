@@ -4,36 +4,42 @@ using System.Collections.Generic;
 namespace Boostable.CodeBuilding.Core
 {
     /// <summary>
-    /// Defines a scope for managing code composition operations, including posting builder entries and opening new code
-    /// composer instances.
+    /// Defines a scope for managing code composition, including segment creation, fragment processing, and disposal
+    /// notifications.
     /// </summary>
-    /// <remarks>The <see cref="IBuildScope"/> interface provides methods for interacting with code composers
-    /// and managing the lifecycle of code composition operations. It allows posting collections of builder entries to a
-    /// composer and creating new instances of specific composer types.</remarks>
+    /// <remarks>This interface provides methods for creating new segments within a scope, sending code
+    /// fragments to the appropriate composer or root builder, and notifying composers when the scope is disposed. It is
+    /// intended for use in scenarios where structured code generation and composition are required.</remarks>
     internal interface IBuildScope
-
     {
         /// <summary>
-        /// Posts a collection of code builder entries to the current composer or root StringBuilder if exists and no composer is available.
+        /// Begins a new segment in the current scope with the specified code composer and maximum nesting depth.
         /// </summary>
-        /// <param name="entries">A collection of code builder entries to be posted. Cannot be <see langword="null"/> or empty.</param>
-        void Post(IEnumerable<IComposingEntry> entries);
-
-        /// <summary>
-        /// Opens a new instance of the specified code composer type and initializes it using the provided composer.
-        /// </summary>
-        /// <typeparam name="TCodeComposer">The type of the code composer to open. Must be a class that implements <see cref="ICodeComposer"/> and has a
+        /// <typeparam name="TCodeComposer">The type of the code composer to use for the segment. Must implement <see cref="ICodeComposer"/> and have a
         /// parameterless constructor.</typeparam>
-        /// <param name="cb">The composer instance used to initialize the new code composer. Cannot be <see langword="null"/>.</param>
-        /// <param name="maxStackingDepth">The maximum stacking depth for the new composer. This parameter is optional and the default value is -1.</param>
-        /// <returns>A new instance of <typeparamref name="TCodeComposer"/> initialized with the provided composer.</returns>
-        TCodeComposer Open<TCodeComposer>(ICodeComposer cb, int maxStackingDepth)
+        /// <param name="cb">The current code composer instance that defines the context for the new segment. Cannot be <see
+        /// langword="null"/>.</param>
+        /// <param name="maxNestingDepth">The maximum allowed nesting depth for the segment. Must be a non-negative integer.</param>
+        /// <returns>An instance of <typeparamref name="TCodeComposer"/> representing the new segment in the current scope.</returns>
+        TCodeComposer BeginSegmentInScope<TCodeComposer>(ICodeComposer cb, int maxNestingDepth)
             where TCodeComposer : class, ICodeComposer, new();
 
         /// <summary>
-        /// Notifies the specified <see cref="ICodeComposer"/> that the current object has been disposed.
+        /// Sends the specified code fragments to the previous composer or the root string builder for processing.
         /// </summary>
-        /// <param name="composer">The <see cref="ICodeComposer"/> to notify. Cannot be <see langword="null"/>.</param>
-        void NotifyDisposed(ICodeComposer composer);
+        /// <remarks>If a previous composer is available, the fragments are passed to it for further
+        /// processing. Otherwise, the fragments are sent to the root string builder. Ensure that the collection is not
+        /// null and contains valid code fragments to avoid unexpected behavior.</remarks>
+        /// <param name="fragments">A collection of code fragments to be processed. Each fragment represents a unit of code to be handled.</param>
+        void PostbackToPrevComposerOrRootStringBudiler(IEnumerable<ICodeFragment> fragments);
+
+        /// <summary>
+        /// Removes the specified composer from the top of the stack.
+        /// </summary>
+        /// <remarks>This method enforces a strict stack-based disposal order. If the specified composer
+        /// is not the top of the stack, an exception is thrown. After removal, the parent composer (if any) is updated
+        /// to unset its child composer.</remarks>
+        /// <param name="composer">The composer to remove from the stack. Cannot be <see langword="null"/>.</param>
+        void RemoveComposerFromStack(ICodeComposer composer);
     }
 }

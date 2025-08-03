@@ -67,6 +67,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_8000_E2ETests", "src\boo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_9000_ConsoleApp1", "src\boostable-code-builder\ConsoleApp1\02_9000_ConsoleApp1.csproj", "{910F0342-BF65-14EF-EBA7-93A27D039DBC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_7000_DocumentGenerator", "src\boostable-code-builder\DocumentGenerator\02_7000_DocumentGenerator.csproj", "{B21B770E-455F-47EE-BAB6-D447AC861BD3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -149,6 +151,10 @@ Global
 		{910F0342-BF65-14EF-EBA7-93A27D039DBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{910F0342-BF65-14EF-EBA7-93A27D039DBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{910F0342-BF65-14EF-EBA7-93A27D039DBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B21B770E-455F-47EE-BAB6-D447AC861BD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B21B770E-455F-47EE-BAB6-D447AC861BD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B21B770E-455F-47EE-BAB6-D447AC861BD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B21B770E-455F-47EE-BAB6-D447AC861BD3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -176,6 +182,7 @@ Global
 		{D422ABDE-361E-428C-D84E-3AC4646AF9E5} = {2018AF37-884D-45D3-84A8-E30EF4371B17}
 		{3EF1DCF7-6970-186A-42D3-BC2F42A5A6AC} = {2018AF37-884D-45D3-84A8-E30EF4371B17}
 		{910F0342-BF65-14EF-EBA7-93A27D039DBC} = {2018AF37-884D-45D3-84A8-E30EF4371B17}
+		{B21B770E-455F-47EE-BAB6-D447AC861BD3} = {2018AF37-884D-45D3-84A8-E30EF4371B17}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09699C21-ED43-4667-9AE5-723807C00338}

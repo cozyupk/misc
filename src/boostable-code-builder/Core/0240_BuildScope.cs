@@ -15,43 +15,45 @@ namespace Boostable.CodeBuilding.Core
     internal class BuildScope : IBuildScope
     {
         /// <summary>
-        /// Gets the action used to initialize the internal and external code composers.
+        /// Gets the action to be executed when beginning a segment within the current scope.
         /// </summary>
-        private Action<CodeComposerBase, ICodeComposer, int> InitializeComposerAction { get; }
+        private Action<CodeComposerBase, ICodeComposer, int> BeginSegmentInScopeAction { get; }
 
         /// <summary>
-        /// Gets the action to be executed after code composition is completed.
+        /// Gets the action used to remove a specified <see cref="ICodeComposer"/> from the stack.
         /// </summary>
-        private Action<IEnumerable<IComposingEntry>> PostAction { get; }
+        private Action<ICodeComposer> RemoveComposerFromStackAction { get; }
 
         /// <summary>
-        /// Gets the action to be invoked when a <see cref="CodeComposerBase"/> instance is disposed.
+        /// Gets the action that processes a collection of <see cref="ICodeFragment"/> instances and posts the result
+        /// back to the previous composer or the root string builder.
         /// </summary>
-        private Action<ICodeComposer> NotifyDisposedAction { get; }
+        private Action<IEnumerable<ICodeFragment>> PostbackToPrevComposerOrRootStringBudilerAction { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BuildScope"/> class with the specified actions for
-        /// initialization and post-processing.
+        /// Initializes a new instance of the <see cref="BuildScope"/> class, which manages the lifecycle of a code
+        /// composition scope.
         /// </summary>
-        /// <param name="initializeComponentAction">An action that initializes the component. The first parameter is an internal composer, and the second
-        /// parameter is the public composer. This action cannot be <see langword="null"/>.</param>
-        /// <param name="postAction">An action that performs post-processing after the build operation. The first parameter is the public
-        /// composer, and the second parameter is a collection of code builder entries. This action cannot be <see
-        /// langword="null"/>.</param>
-        /// <param name="notifyDisposedAction">An action that is invoked when a <see cref="CodeComposerBase"/> instance is disposed. This action cannot be
-        /// <see langword="null"/>.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="initializeComponentAction"/> or <paramref name="postAction"/> is <see
-        /// langword="null"/>.</exception>
+        /// <param name="beginSegmentInScopeAction">An action to be executed when a new segment is started within the scope. The action receives the current
+        /// <see cref="CodeComposerBase"/>, the active <see cref="ICodeComposer"/>, and an integer representing the
+        /// segment index.</param>
+        /// <param name="removeComposerFromStackAction">An action to be executed to remove the current composer from the stack when the scope ends. The action
+        /// receives the active <see cref="ICodeComposer"/>.</param>
+        /// <param name="postbackToPrevComposerOrRootStringBudiler">An action to handle postback operations to the previous composer or the root string builder. The action
+        /// receives a collection of <see cref="ICodeFragment"/> objects.</param>
+        /// <exception cref="ArgumentNullException">Thrown if any of the parameters <paramref name="beginSegmentInScopeAction"/>, <paramref
+        /// name="removeComposerFromStackAction"/>, or <paramref name="postbackToPrevComposerOrRootStringBudiler"/> is
+        /// <see langword="null"/>.</exception>
         public BuildScope(
-            Action<CodeComposerBase, ICodeComposer, int> initializeComponentAction,
-            Action<ICodeComposer> notifyDisposedAction,
-            Action<IEnumerable<IComposingEntry>> postAction
+            Action<CodeComposerBase, ICodeComposer, int> beginSegmentInScopeAction,
+            Action<ICodeComposer> removeComposerFromStackAction,
+            Action<IEnumerable<ICodeFragment>> postbackToPrevComposerOrRootStringBudiler
         )
         {
             // Validate parameters and store them.
-            InitializeComposerAction = initializeComponentAction ?? throw new ArgumentNullException(nameof(initializeComponentAction));
-            NotifyDisposedAction = notifyDisposedAction ?? throw new ArgumentNullException(nameof(notifyDisposedAction));
-            PostAction = postAction ?? throw new ArgumentNullException(nameof(postAction));
+            BeginSegmentInScopeAction = beginSegmentInScopeAction ?? throw new ArgumentNullException(nameof(beginSegmentInScopeAction));
+            RemoveComposerFromStackAction = removeComposerFromStackAction ?? throw new ArgumentNullException(nameof(removeComposerFromStackAction));
+            PostbackToPrevComposerOrRootStringBudilerAction = postbackToPrevComposerOrRootStringBudiler ?? throw new ArgumentNullException(nameof(postbackToPrevComposerOrRootStringBudiler));
         }
 
         /// <summary>
@@ -66,7 +68,7 @@ namespace Boostable.CodeBuilding.Core
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="cb"/> is <see langword="null"/>.</exception>
         /// <exception cref="InvalidOperationException">Thrown if the specified <typeparamref name="TCodeComposer"/> type does not implement <see
         /// cref="ICodeComposerInternal"/>.</exception>
-        public TCodeComposer Open<TCodeComposer>(ICodeComposer cb, int maxStackingDepth = -1)
+        public TCodeComposer BeginSegmentInScope<TCodeComposer>(ICodeComposer cb, int maxStackingDepth = -1)
             where TCodeComposer : class, ICodeComposer, new()
         {
             // Validate the input parameters and create a new composer instance.
@@ -80,10 +82,26 @@ namespace Boostable.CodeBuilding.Core
             }
 
             // Initialize the new composer using the provided action.
-            InitializeComposerAction(codeComposerInternal, cb, maxStackingDepth);
+            BeginSegmentInScopeAction(codeComposerInternal, cb, maxStackingDepth);
 
             // return the initialized composer.
             return newComposer;
+        }
+
+        /// <summary>
+        /// Notifies the specified <see cref="ICodeComposer"/> instance that it has been disposed.
+        /// </summary>
+        /// <param name="composer">The <see cref="ICodeComposer"/> instance to notify. Cannot be <see langword="null"/>.</param>
+        public void RemoveComposerFromStack(ICodeComposer composer)
+        {
+            // Validate the input parameter.
+            if (composer is not CodeComposerBase composerInternal)
+            {
+                throw new ArgumentNullException(nameof(composer), $"The must implement {nameof(CodeComposerBase)}.");
+            }
+
+            // Notify the composer that it has been disposed.
+            RemoveComposerFromStackAction(composerInternal);
         }
 
         /// <summary>
@@ -94,26 +112,10 @@ namespace Boostable.CodeBuilding.Core
         /// exceptions.</remarks>
         /// <param name="from">The code composer that initiates the post operation.</param>
         /// <param name="entries">A collection of code builder entries to be posted. Cannot be null.</param>
-        public void Post(IEnumerable<IComposingEntry> entries)
+        public void PostbackToPrevComposerOrRootStringBudiler(IEnumerable<ICodeFragment> entries)
         {
             // Delegate the post operation to the internal action.
-            PostAction(entries);
-        }
-
-        /// <summary>
-        /// Notifies the specified <see cref="ICodeComposer"/> instance that it has been disposed.
-        /// </summary>
-        /// <param name="composer">The <see cref="ICodeComposer"/> instance to notify. Cannot be <see langword="null"/>.</param>
-        public void NotifyDisposed(ICodeComposer composer)
-        {
-            // Validate the input parameter.
-            if (composer is not CodeComposerBase composerInternal)
-            {
-                throw new ArgumentNullException(nameof(composer), $"The must implement {nameof(CodeComposerBase)}.");
-            }
-
-            // Notify the composer that it has been disposed.
-            NotifyDisposedAction(composerInternal);
+            PostbackToPrevComposerOrRootStringBudilerAction(entries);
         }
     }
 }

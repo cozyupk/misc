@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace Boostable.CodeBuilding.Core
@@ -11,9 +12,9 @@ namespace Boostable.CodeBuilding.Core
     /// Provides a base class for composing code using a buffer of entries and supporting thread-safe operations.
     /// </summary>
     /// <remarks>This class serves as the foundation for building code composition functionality. It
-    /// manages a thread-safe buffer of <see cref="IComposingEntry"/> objects and provides methods for appending
+    /// manages a thread-safe buffer of <see cref="ICodeFragment"/> objects and provides methods for appending
     /// strings, managing code composition scopes, and handling post-processing of buffered entries. Derived classes can
-    /// extend its functionality by overriding the <see cref="OnPost"/> method to customize post-processing
+    /// extend its functionality by overriding the <see cref="OnEmitSegment"/> method to customize post-processing
     /// behavior.</remarks>
     public class CodeComposerBase : ICodeComposer
     {
@@ -26,11 +27,11 @@ namespace Boostable.CodeBuilding.Core
         int _isDisposed = 0;
 
         /// <summary>
-        /// Gets the buffer that stores the collection of <see cref="IComposingEntry"/> objects.
-        /// We use a <see cref="ConcurrentStack{T}"/> instead of a <see cref="ConcurrentQueue{T}"/> 
-        /// because <c>TryPeek</c> should return the last entry added to the buffer (LIFO behavior).
+        /// Gets a thread-safe stack used to store and manage reusable code fragments.
         /// </summary>
-        private ConcurrentStack<IComposingEntry> Buffer { get; } = new();
+        /// <remarks>This property provides a thread-safe mechanism for managing a pool of reusable code
+        /// fragments. It is intended for internal use to optimize performance by reducing object allocations.</remarks>
+        private ConcurrentStack<ICodeFragment> SegmentBuffer { get; } = new();
 
         /// <summary>
         /// Gets or sets the scope used for building code within the current operation.
@@ -38,9 +39,9 @@ namespace Boostable.CodeBuilding.Core
         private IBuildScope? BuildScope { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the previous operation has terminated the last entry.
+        /// Gets or sets a value indicating whether the last fragment in the previous segment has terminated.
         /// </summary>
-        private bool PrevHasTerminatedLastEntry { get; set; }
+        private bool HasLastFragmentInPrevSegmentTerminated { get; set; }
 
         /// <summary>
         /// Gets or sets the current child composer being used.
@@ -53,42 +54,40 @@ namespace Boostable.CodeBuilding.Core
         private object CurrentChildComposerSyncLock { get; } = new();
 
         /// <summary>
-        /// Gets the remaining depth available for a recursive operation or process.
+        /// Gets the remaining allowed nesting depth for segments in the current context.
         /// </summary>
-        internal int DepthLeft { get; private set; } = 1;
+        internal int SegmentNestingDepthLeft { get; private set; }
 
         /// <summary>
-        /// Initializes the composer with the specified build scope and termination state.
+        /// Attaches the current instance to the specified build scope.
         /// </summary>
-        /// <param name="builderScope">The build scope to be used for composing code. Cannot be <see langword="null"/>.</param>
-        /// <param name="prevHasTerminatedLastEntry">A value indicating whether the previous entry has terminated.  <see langword="true"/> if the last entry was
-        /// terminated; otherwise, <see langword="false"/>.</param>
-        /// <exception cref="ObjectDisposedException">Thrown if the composer has already been disposed.</exception>
+        /// <param name="builderScope">The build scope to which the instance will be attached. Cannot be <see langword="null"/>.</param>
+        /// <param name="hasLastFragmentInPrevSegmentTerminated">A value indicating whether the last fragment in the previous segment has terminated.</param>
+        /// <exception cref="ObjectDisposedException">Thrown if the current instance has been disposed.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="builderScope"/> is <see langword="null"/>.</exception>
-        internal void Initialize(IBuildScope builderScope, bool prevHasTerminatedLastEntry)
+        internal void AttachToScope(IBuildScope builderScope, bool hasLastFragmentInPrevSegmentTerminated)
         {
             if (_isDisposed != 0)
             {
                 throw new ObjectDisposedException(nameof(CodeComposerBase));
             }
             BuildScope = builderScope ?? throw new ArgumentNullException(nameof(builderScope));
-            PrevHasTerminatedLastEntry = prevHasTerminatedLastEntry;
+            HasLastFragmentInPrevSegmentTerminated = hasLastFragmentInPrevSegmentTerminated;
         }
 
         /// <summary>
-        /// Performs cleanup operations when the object is being disposed.
+        /// Invoked when the object is being disposed.
         /// </summary>
-        /// <remarks>Override this method in a derived class to release unmanaged resources  or perform
-        /// other custom cleanup logic during the disposal process. Ensure that base class implementations are called if
-        /// overridden.</remarks>
-        public virtual void OnDispose()
+        /// <remarks>This method provides an opportunity for derived classes to perform custom cleanup
+        /// logic  during the disposal process. The default implementation does nothing.</remarks>
+        public virtual void OnDisposing()
         {
             // Default implementation does nothing.
             // Derived classes can override this method to perform custom cleanup.
         }
 
         /// <summary>
-        /// Handles post-processing of buffered entries before they are flushed to the parent composer or output.
+        /// Emits the current segment as a collection of code fragments.
         /// </summary>
         /// <remarks>
         /// This method retrieves all entries currently stored in the buffer, and returns them for further processing
@@ -97,17 +96,17 @@ namespace Boostable.CodeBuilding.Core
         /// Override this method in derived classes to:
         /// <list type="bullet">
         /// <item><description>Wrap entries in region blocks or indentation scopes</description></item>
-        /// <item><description>Filter out specific entries</description></item>
-        /// <item><description>Reorder or sort entries</description></item>
-        /// <item><description>Inject additional entries (e.g., headers, footers, markers)</description></item>
+        /// <item><description>Filter or transform specific entries</description></item>
+        /// <item><description>Reorder or selectively emit fragments</description></item>
+        /// <item><description>Inject additional fragments (e.g., headers, footers, markers)</description></item>
         /// </list>
         /// 
         /// This method is called automatically during <see cref="Dispose"/>, and should not be called manually.
         /// </remarks>
-        /// <returns>A sequence of <see cref="IComposingEntry"/> objects to be posted to the next composer or output.</returns>
-        protected virtual IEnumerable<IComposingEntry> OnPost()
+        /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="ICodeFragment"/> representing the current segment's contents.</returns>
+        protected virtual IEnumerable<ICodeFragment> OnEmitSegment()
         {
-            var entries = Buffer.ToList();
+            var entries = SegmentBuffer.ToList();
             return entries;
         }
 
@@ -155,75 +154,79 @@ namespace Boostable.CodeBuilding.Core
         }
 
         /// <summary>
-        /// Resets the remaining depth for the current operation to the specified value.
+        /// Sets the remaining nesting depth for the current composer, ensuring that the nesting depth does not exceed
+        /// the specified maximum.
         /// </summary>
-        /// <remarks>
-        /// Use this method to reset the depth counter when additional nested composers are needed.
-        /// The <paramref name="depth"/> must be a positive value.
-        ///
-        /// This method is also invoked internally by <c>CodeBuilder</c> when the composer is registered,
-        /// passing in <c>parentComposer.DepthLeft - 1</c> as the new depth.
-        /// </remarks>
-        /// <param name="depth">The new remaining depth. Must must be positive value.</param>
-        /// <exception cref="ArgumentOutOfRangeException">
-        /// Thrown if <paramref name="depth"/> is less than or equal to zero.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if the depth limit has already been exceeded.
-        /// </exception>
-        public void ResetMaxDepth(int depth)
+        /// <remarks>If a child composer is active, the method delegates the operation to the child
+        /// composer. Otherwise, it updates the nesting depth for the current composer. This method ensures that the
+        /// nesting depth remains within valid bounds.</remarks>
+        /// <param name="maxNestingDepth">The maximum allowable nesting depth. Must be a non-negative integer.</param>
+        /// <exception cref="ObjectDisposedException">Thrown if the composer has been disposed.</exception>
+        /// <exception cref="SegmentNestingDepthExceededException">Thrown if <paramref name="maxNestingDepth"/> is less than zero, indicating an invalid nesting depth.</exception>
+        public void SetRemainingNestingDepth(int maxNestingDepth)
         {
-            if (_isDisposed != 0)
+            lock (CurrentChildComposerSyncLock)
             {
-                throw new ObjectDisposedException(nameof(CodeComposerBase));
-            }
+                // Check if the composer has been disposed.
+                if (_isDisposed != 0)
+                {
+                    throw new ObjectDisposedException(nameof(CodeComposerBase));
+                }
+                // If there is a child composer, delegate the updating to it.
+                if (CurrentChildComposer != null)
+                {
+                    CurrentChildComposer.HasLastFragmentTerminated();
+                    return;
+                }
 
-            if (depth < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(depth), "Depth must be positive value.");
-            }
+                // If the depth is negative, the composer is already in an invalid state.
+                if (maxNestingDepth < 0)
+                {
+                    throw new SegmentNestingDepthExceededException(GetType());
+                }
 
-            // If the depth is zero, the composer is already in an invalid state.
-            if (depth == 0)
-            {
-                throw new CodeComposerDepthExceededException(GetType());
-            }
+                // Store the new depth value.
+                SegmentNestingDepthLeft = maxNestingDepth;
 
-            DepthLeft = depth;
+            }
         }
 
         /// <summary>
-        /// Recursively collects composing entries from the current composer and its child composers.
+        /// Recursively collects code fragments from the current composer and its child composers.
         /// </summary>
-        /// <remarks>This method retrieves entries from the current composer and, if a child composer
-        /// exists, recursively collects entries from the child composer as well. The method ensures thread safety by
-        /// locking on the synchronization object.</remarks>
-        /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="IComposingEntry"/> objects representing the collected entries
-        /// from the current composer and its child composers.</returns>
-        private IEnumerable<IComposingEntry> CollectEntriesRecursively()
+        /// <remarks>This method retrieves the code fragments emitted by the current composer and, if a
+        /// child composer exists,  recursively collects fragments from the child composer as well. The operation is
+        /// thread-safe, as it locks  on the <see cref="CurrentChildComposerSyncLock"/> to ensure consistency during
+        /// collection.</remarks>
+        /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="ICodeFragment"/> objects representing the collected code
+        /// fragments.</returns>
+        private IEnumerable<ICodeFragment> CollectFragmentsRecursively()
         {
             lock (CurrentChildComposerSyncLock)
             {
                 // Get the entries from this composer.
-                var entries = OnPost();
+                var entries = OnEmitSegment();
                 // If there is a child composer, get its entries as well.
                 if (CurrentChildComposer != null)
                 {
-                    entries = entries.Concat(CurrentChildComposer.CollectEntriesRecursively());
+                    entries = entries.Concat(CurrentChildComposer.CollectFragmentsRecursively());
                 }
                 return entries;
             }
         }
 
         /// <summary>
-        /// Appends the specified string to the internal buffer, optionally marking it as terminated.
+        /// Appends a code fragment to the current composer.
         /// </summary>
-        /// <param name="str">The string to append to the buffer. Cannot be <see langword="null"/>.</param>
-        /// <param name="shouldTerminate">A value indicating whether the appended string should be marked as terminated.  If <see langword="true"/>,
-        /// the string is considered terminated; otherwise, it is not.</param>
-        /// <returns>The current instance of <see cref="ICodeComposer"/>, allowing for method chaining.</returns>
-        /// <exception cref="ObjectDisposedException">Thrown if the method is called on a disposed instance of <see cref="CodeComposerBase"/>.</exception>
-        public ICodeComposer Append(string str, bool shouldTerminate = false)
+        /// <remarks>If a child composer is active, the append operation is delegated to the child
+        /// composer.  Otherwise, the fragment is appended to the internal buffer of the current composer.</remarks>
+        /// <param name="payload">The string content of the code fragment to append. Cannot be <see langword="null"/>.</param>
+        /// <param name="isTerminated">A value indicating whether the appended fragment is terminated.  If <see langword="true"/>, the fragment is
+        /// considered terminated; otherwise, it is not.</param>
+        /// <returns>The current <see cref="ICodeComposer"/> instance, allowing for method chaining.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the composer has been disposed.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="payload"/> is <see langword="null"/>.</exception>
+        public ICodeComposer AppendFragment(string payload, bool isTerminated = false)
         {
             lock (CurrentChildComposerSyncLock)
             {
@@ -233,31 +236,30 @@ namespace Boostable.CodeBuilding.Core
                     throw new ObjectDisposedException(nameof(CodeComposerBase));
                 }
                 // Validate the input string.
-                if (str == null)
+                if (payload == null)
                 {
-                    throw new ArgumentNullException(nameof(str), "String to append cannot be null.");
+                    throw new ArgumentNullException(nameof(payload), "String to append cannot be null.");
                 }
                 // Check if there is a child composer.
                 if (CurrentChildComposer != null)
                 {
                     // If there is a child composer, delegate the append operation to it.
-                    return CurrentChildComposer.Append(str, shouldTerminate);
+                    return CurrentChildComposer.AppendFragment(payload, isTerminated);
                 }
                 // If there is no child composer, append the string to the buffer.
-                Buffer.Push(new ComposingEntry(str, shouldTerminate));
+                SegmentBuffer.Push(new CodeFragment(payload, isTerminated));
                 return this;
             }
         }
 
         /// <summary>
-        /// Appends the specified string followed by a newline to the current composition.
+        /// Appends a fragment to the current composition, ensuring it is terminated, and returns the current composer
+        /// instance.
         /// </summary>
-        /// <remarks>We specify <see langword="null"/> as the default value for <paramref name="str"/>, so that
-        /// users can call <c>AppendLine()</c> without any parameters to append just a newline.</remarks>
-        /// <param name="str">The string to append. If <see langword="null"/>, an empty string is appended.</param>
-        /// <returns>The current instance of <see cref="ICodeComposer"/>, allowing for method chaining.</returns>
-        /// <exception cref="ObjectDisposedException">Thrown if the current instance has been disposed.</exception>
-        public ICodeComposer AppendLine(string? str = null)
+        /// <param name="payload">The string payload to append. If <see langword="null"/>, an empty string is appended.</param>
+        /// <returns>The current <see cref="ICodeComposer"/> instance, allowing for method chaining.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the composer has been disposed.</exception>
+        public ICodeComposer AppendTerminatedFragment(string? payload = null)
         {
             // Even though Append() also locks CurrentChildComposerSyncLock internally,
             // we explicitly check for disposal here to avoid entering the method if already disposed.
@@ -267,18 +269,20 @@ namespace Boostable.CodeBuilding.Core
                 {
                     throw new ObjectDisposedException(nameof(CodeComposerBase));
                 }
-                Append(str ?? string.Empty, true);
+                AppendFragment(payload ?? string.Empty, true);
                 return this;
             }
         }
 
         /// <summary>
-        /// Determines whether the last entry in the buffer has been terminated.
+        /// Determines whether the last fragment in the current or previous segment has been terminated.
         /// </summary>
-        /// <returns><see langword="true"/> if the last entry in the buffer is terminated; otherwise,  the value of the previous
-        /// termination state.</returns>
-        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
-        public bool HasTerminatedLastEntry()
+        /// <remarks>This method checks if the last fragment in the current segment buffer or the previous
+        /// segment has been properly terminated. If a child composer is present, the check is delegated to
+        /// it.</remarks>
+        /// <returns><see langword="true"/> if the last fragment has been terminated; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the composer has been disposed.</exception>
+        public bool HasLastFragmentTerminated()
         {
             lock (CurrentChildComposerSyncLock)
             {
@@ -290,11 +294,11 @@ namespace Boostable.CodeBuilding.Core
                 // If there is a child composer, delegate the check to it.
                 if (CurrentChildComposer != null)
                 {
-                    return CurrentChildComposer.HasTerminatedLastEntry();
+                    return CurrentChildComposer.HasLastFragmentTerminated();
                 }
                 // If there is no child composer, check the last entry in the buffer.
-                Buffer.TryPeek(out var lastEntry);
-                return lastEntry?.IsTerminated ?? PrevHasTerminatedLastEntry;
+                SegmentBuffer.TryPeek(out var lastEntry);
+                return lastEntry?.IsTerminated ?? HasLastFragmentInPrevSegmentTerminated;
             }
         }
 
@@ -305,10 +309,11 @@ namespace Boostable.CodeBuilding.Core
         /// composer. Otherwise, a new instance of the specified code composer type is created.</remarks>
         /// <typeparam name="TCodeComposer">The type of the code composer to open. Must implement <see cref="ICodeComposer"/> and have a parameterless
         /// constructor.</typeparam>
+        /// <param name="maxNestingDepth">The maximum allowed nesting depth for the segment. If set to -1, the value is automatically decided.</param>
         /// <returns>An instance of the specified <typeparamref name="TCodeComposer"/> type.</returns>
         /// <exception cref="ObjectDisposedException">Thrown if the current code composer has been disposed.</exception>
         /// <exception cref="InvalidOperationException">Thrown if the <c>BuildScope</c> is not initialized.</exception>
-        public TCodeComposer Open<TCodeComposer>(int maxStackingDepth = -1)
+        public TCodeComposer BeginSegment<TCodeComposer>(int maxNestingDepth = -1)
             where TCodeComposer : class, ICodeComposer, new()
         {
             lock (CurrentChildComposerSyncLock)
@@ -320,11 +325,11 @@ namespace Boostable.CodeBuilding.Core
                 // If there is a child composer, delegate the open operation to it.
                 if (CurrentChildComposer != null)
                 {
-                    return CurrentChildComposer.Open<TCodeComposer>();
+                    return CurrentChildComposer.BeginSegment<TCodeComposer>();
                 }
 
                 // If there is no child composer, create a new instance of the specified code composer type.
-                return BuildScope?.Open<TCodeComposer>(this, maxStackingDepth)
+                return BuildScope?.BeginSegmentInScope<TCodeComposer>(this, maxNestingDepth)
                     ?? throw new InvalidOperationException("The BuildScope in the CodeComposer is not initialized.");
             }
         }
@@ -342,7 +347,18 @@ namespace Boostable.CodeBuilding.Core
             if (_isDisposed != 0)
                 return "[CodeComposer: Disposed]";
 
-            return string.Concat(CollectEntriesRecursively().Select(e => e.Str));
+            lock (CurrentChildComposerSyncLock)
+            {
+                var sb = new StringBuilder();
+                foreach (var f in CollectFragmentsRecursively())
+                {
+                    if (f.IsTerminated)
+                        sb.AppendLine(f.Payload);
+                    else
+                        sb.Append(f.Payload);
+                }
+                return sb.ToString();
+            }
         }
 
         /// <summary>
@@ -368,13 +384,13 @@ namespace Boostable.CodeBuilding.Core
             }
 
             // Notify that this composer is no longer active
-            BuildScope?.NotifyDisposed(this);
+            BuildScope?.RemoveComposerFromStack(this);
 
             // Perform post-processing of buffered entries
-            BuildScope?.Post(Buffer.ToArray().Reverse());
+            BuildScope?.PostbackToPrevComposerOrRootStringBudiler(SegmentBuffer.ToArray().Reverse());
 
             // Call the virtual method for additional cleanup
-            OnDispose();
+            OnDisposing();
         }
     }
 }

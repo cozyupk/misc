@@ -9,8 +9,4 @@
 		<AssemblyName>Boostable.CodeBuilding.Core</AssemblyName>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\Abstractions\02_0100_Abstractions.csproj" />
-	</ItemGroup>
-
 </Project>

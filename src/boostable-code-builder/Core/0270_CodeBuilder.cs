@@ -6,12 +6,12 @@ namespace Boostable.CodeBuilding.Core
     /// <summary>
     /// Provides functionality to build and compose code using a specified default composer type.
     /// </summary>
-    /// <remarks>This class serves as a specialized implementation of <see cref="CodeBuidlerWithoutDefaultComposer"/> that uses
+    /// <remarks>This class serves as a specialized implementation of <see cref="CodeBuilderWithoutDefaultComposer"/> that uses
     /// a default composer type to facilitate code generation. It provides methods to initialize and manage the code
     /// composition process.</remarks>
     /// <typeparam name="TDefaultComposer">The default composer type used for code composition. Must implement <see cref="ICodeComposer"/> and have a
     /// parameterless constructor.</typeparam>
-    public class CodeBuilder<TDefaultComposer> : CodeBuidlerWithoutDefaultComposer
+    public class CodeBuilder<TDefaultComposer> : CodeBuilderWithoutDefaultComposer
         where TDefaultComposer : class, ICodeComposer, new()
     {
         /// <summary>
@@ -22,8 +22,8 @@ namespace Boostable.CodeBuilding.Core
         /// cref="StringBuilder"/> instance, enabling code generation or manipulation directly on the provided string
         /// buffer.</remarks>
         /// <param name="sb">The <see cref="StringBuilder"/> instance to be used for building code.</param>
-        /// <param name="initialMaxStaeckingDepth">The initial maximum stacking depth for nested operations. Defaults to 0x10.</param>
-        public CodeBuilder(StringBuilder sb, int initialMaxStaeckingDepth = 0x10) : base(sb, initialMaxStaeckingDepth)
+        /// <param name="initialMaxStackingDepth">The initial maximum stacking depth for nested operations. Defaults to 0x10.</param>
+        public CodeBuilder(StringBuilder sb, int initialMaxStackingDepth = 0x10) : base(sb, initialMaxStackingDepth)
         {
             // No additional initialization needed here.
         }
@@ -37,7 +37,7 @@ namespace Boostable.CodeBuilding.Core
         /// <returns>An instance of the default composer of type <typeparamref name="TDefaultComposer"/>.</returns>
         public static TDefaultComposer Open(StringBuilder? sb = null, int maxStackingDepth = 0x10)
         {
-            return CodeBuidlerWithoutDefaultComposer.Open<TDefaultComposer>(sb, maxStackingDepth);
+            return CodeBuilderWithoutDefaultComposer.Open<TDefaultComposer>(sb, maxStackingDepth);
         }
     }
 

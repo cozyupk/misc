@@ -12,14 +12,14 @@ namespace Boostable.CodeBuilding.Core
     /// class is designed to work with implementations of <see cref="ICodeComposer"/> to facilitate structured code
     /// generation.
     /// </summary>
-    /// <remarks>The <see cref="CodeBuidlerWithoutDefaultComposer"/> class is a sealed utility that manages a stack of code
+    /// <remarks>The <see cref="CodeBuilderWithoutDefaultComposer"/> class is a sealed utility that manages a stack of code
     /// composers, ensuring proper initialization and disposal of composers in a thread-safe manner. It enforces strict
     /// usage patterns to prevent misuse, such as attempting to use a composer that is not the last in the stack. This
     /// class is intended for advanced scenarios where structured code generation is required.  To use this class, call
     /// the <see cref="Open{TCodeComposer}(StringBuilder)"/> method to create and initialize a new code composer of the
     /// specified type. The caller is responsible for ensuring proper disposal of composers, typically using a `using`
     /// statement.</remarks>
-    public class CodeBuidlerWithoutDefaultComposer
+    public class CodeBuilderWithoutDefaultComposer
     {
         /// <summary>
         /// Gets the root string builder used for composing code.
@@ -47,23 +47,23 @@ namespace Boostable.CodeBuilding.Core
         private int InitialMaxStackingDepth { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CodeBuidlerWithoutDefaultComposer"/> class with the specified
+        /// Initializes a new instance of the <see cref="CodeBuilderWithoutDefaultComposer"/> class with the specified
         /// <see cref="StringBuilder"/> and initial maximum stacking depth.
         /// </summary>
         /// <remarks>This constructor sets up the internal state of the composer, including initializing
-        /// the root string builder and configuring the build scope. The <paramref name="initialMaxStaeckingDepth"/>
+        /// the root string builder and configuring the build scope. The <paramref name="initialMaxStackingDepth"/>
         /// determines the maximum depth of nested operations that can be performed by the composer.</remarks>
         /// <param name="sb">An optional <see cref="StringBuilder"/> instance to be used as the root string builder. If null, a new <see
         /// cref="StringBuilder"/> will be created internally.</param>
-        /// <param name="initialMaxStaeckingDepth">The initial maximum stacking depth for the composer. Must be a non-negative integer. The default value is 16
+        /// <param name="initialMaxStackingDepth">The initial maximum stacking depth for the composer. Must be a non-negative integer. The default value is 16
         /// (0x10).</param>
-        protected CodeBuidlerWithoutDefaultComposer(StringBuilder? sb, int initialMaxStaeckingDepth = 0x10)
+        protected CodeBuilderWithoutDefaultComposer(StringBuilder? sb, int initialMaxStackingDepth = 0x10)
         {
             RootStringBuilder = sb;
-            InitialMaxStackingDepth = initialMaxStaeckingDepth;
+            InitialMaxStackingDepth = initialMaxStackingDepth;
             BuildScopeInstance = new BuildScope(
                 (newCcp, ccp, maxStackingDepth) => InitializeComposer(newCcp, ccp, maxStackingDepth),
-                (target) => OnComposerDisposed(target),
+                (target) => RemoveComposerFromStackAction(target),
                 (entries) => AppendEntriesToCurrentComposerOrRoot(entries)
             );
         }
@@ -82,7 +82,7 @@ namespace Boostable.CodeBuilding.Core
         public static TCodeComposer Open<TCodeComposer>(StringBuilder? sb = null, int maxStackingDepth = 0x10)
             where TCodeComposer : class, ICodeComposer, new()
         {
-            var codeBuilder = new CodeBuidlerWithoutDefaultComposer(sb, maxStackingDepth);
+            var codeBuilder = new CodeBuilderWithoutDefaultComposer(sb, maxStackingDepth);
 
             var codeComposer = new TCodeComposer();
             if (codeComposer is not CodeComposerBase codeComposerInternal)
@@ -129,28 +129,28 @@ namespace Boostable.CodeBuilding.Core
                 }
 
                 // Initialize maxStackingDepth.
-                newCcp.ResetMaxDepth(maxStackingDepth);
+                newCcp.SetRemainingNestingDepth(maxStackingDepth);
 
                 // Push the new composer onto the stack.
                 ComposersStack.Push(newCcp);
 
-                // We can't check "HasTerminatedLastEntry" if the previous composer is null,
+                // We can't check "HasLastFragmentTerminated" if the previous composer is null,
                 // which in practice means it was just a StringBuilder.
                 // So in that case, we assume the last entry has been terminated.
-                newCcp.Initialize(BuildScopeInstance, ccp?.HasTerminatedLastEntry() ?? true);
+                newCcp.AttachToScope(BuildScopeInstance, ccp?.HasLastFragmentTerminated() ?? true);
             }
         }
 
         /// <summary>
-        /// Handles the disposal of a code composer, ensuring it is the last composer in the stack.
+        /// Removes the specified composer from the top of the stack.
         /// </summary>
-        /// <remarks>This method enforces a strict disposal order for composers. If the specified composer
-        /// is not at the top of the stack, an exception is thrown. Additionally, if a parent composer exists in the stack,
-        /// it is updated by unsetting its child link after the target composer is removed.</remarks>
-        /// <param name="targetComposer">The composer instance being disposed.</param>
-        /// <exception cref="InvalidOperationException">Thrown if the specified composer is not the last composer in the stack, indicating that composers must be
-        /// disposed in the correct order.</exception>
-        private void OnComposerDisposed(ICodeComposer targetComposer)
+        /// <remarks>This method enforces a strict stack-based disposal order. If the specified composer
+        /// is not the top of the stack, an exception is thrown. After removal, the parent composer (if any) is updated
+        /// to unset its child composer.</remarks>
+        /// <param name="targetComposer">The composer to be removed. Must be the current top of the stack.</param>
+        /// <exception cref="InvalidOperationException">Thrown if the specified composer is not the last in the stack. Ensure composers are removed in the correct
+        /// order.</exception>
+        private void RemoveComposerFromStackAction(ICodeComposer targetComposer)
         {
             lock (SyncLock)
             {
@@ -183,10 +183,10 @@ namespace Boostable.CodeBuilding.Core
         /// <remarks>If the stack of composers is empty, the entries are appended directly to the  root
         /// string builder. This method is thread-safe and ensures that only one thread  can modify the composers or
         /// root string builder at a time.</remarks>
-        /// <param name="entries">A collection of <see cref="IComposingEntry"/> objects to append. Each entry's  string value is appended
+        /// <param name="entries">A collection of <see cref="ICodeFragment"/> objects to append. Each entry's  string value is appended
         /// either as a line or inline, depending on whether the  entry is marked as terminated. Entries with null or
         /// empty string values are ignored.</param>
-        private void AppendEntriesToCurrentComposerOrRoot(IEnumerable<IComposingEntry> entries)
+        private void AppendEntriesToCurrentComposerOrRoot(IEnumerable<ICodeFragment> entries)
         {
             // If there are no entries, we do nothing
             if (entries == null || !entries.Any()) return;
@@ -201,8 +201,8 @@ namespace Boostable.CodeBuilding.Core
                 var append = new AppendDelegates(RootStringBuilder, parent);
                 foreach (var entry in entries)
                 {
-                    if (string.IsNullOrEmpty(entry.Str)) continue;
-                    (entry.IsTerminated ? append.AppendLine : append.Append)(entry.Str);
+                    if (string.IsNullOrEmpty(entry.Payload)) continue;
+                    (entry.IsTerminated ? append.AppendLine : append.Append)(entry.Payload);
                 }
             }
         }

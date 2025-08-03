@@ -11,19 +11,19 @@ namespace ConsoleApp1
 
             // Example usage of the Boostable.CodeBuilding.Abstractions
             var sb = new StringBuilder();
-            using (var compooser = CodeBuilder.Open(sb))
+            using (var compooser = CodeBuilder.Open<CodeComposerBase>(sb))
             {
-                compooser.Append("This is a test string.")
-                         .AppendLine("This is another line.")
-                         .Append("Final line without termination.");
-                using (compooser.Open<CodeComposerBase>())
+                compooser.AppendFragment("This is a test string.")
+                         .AppendTerminatedFragment("This is another line.")
+                         .AppendFragment("Final line without termination.");
+                using (compooser.BeginSegment<CodeComposerBase>())
                 {
-                    compooser.Append("This is a test string.")
-                             .AppendLine("This is another line.")
-                             .Append("Final line without termination.");
+                    compooser.AppendFragment("This is a test string.")
+                             .AppendTerminatedFragment("This is another line.")
+                             .AppendFragment("Final line without termination.");
                 }
             }
-            Console.WriteLine($"Composed Code:\n{sb.ToString()}");
+            Console.WriteLine($"Composed Code:\n{sb}");
         }
     }
 }
