@@ -188,7 +188,7 @@ async Task PatternB() {
 // Pattern C
 // Case using ContinueWith and returning the Task returned by ContinueWith (Unwrapあり)
 async Task PatternC() {
-    var task = var task = SomeDummyAsyncMethod(); // Simulated async work (e.g., Task.Delay(200))
+    var task = SomeDummyAsyncMethod(); // Simulated async work (e.g., Task.Delay(200))
     task = task.ContinueWith(/* continuation Task */).Unwrap();
     return task;
 }
