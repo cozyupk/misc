@@ -172,7 +172,7 @@ Consider code like below:
 // Pattern A
 // Case using ContinueWith and returning only the original Task
 async Task PatternA() {
-    var task = var task = SomeDummyAsyncMethod(); // Simulated async work (e.g., Task.Delay(200))
+    var task = SomeDummyAsyncMethod(); // Simulated async work (e.g., Task.Delay(200))
     task.ContinueWith(/* continuation Task */);
     return task;
 }
