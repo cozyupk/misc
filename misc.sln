@@ -3,12 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{2022CB0F-8BAF-F49E-0C48-8EF4C96EC109}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "00_SolutionItems", "00_SolutionItems", "{2022CB0F-8BAF-F49E-0C48-8EF4C96EC109}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "task-continuation-probe", "task-continuation-probe", "{DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01_task-continuation-probe", "01_task-continuation-probe", "{DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}"
 	ProjectSection(SolutionItems) = preProject
 		src\task-continuation-probe\README.md = src\task-continuation-probe\README.md
 		src\task-continuation-probe\README.Ultimate.md = src\task-continuation-probe\README.Ultimate.md
@@ -20,6 +20,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0010_ConsoleApp_ja_JP", "src\task-continuation-probe\ConsoleApp_ja_JP\0010_ConsoleApp_ja_JP.csproj", "{8479F82D-7DFF-096E-B1FB-262A7C21F7F4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0020_ConsoleApp_en_US", "src\task-continuation-probe\ConsoleApp_en_US\0020_ConsoleApp_en_US.csproj", "{1AE5A33A-8EEB-599D-9A91-760F458DA10C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ocp-oriented-tree", "ocp-oriented-tree", "{B9875660-A632-4304-A71D-17FDE497AE98}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\ocp-oriented-tree\Core\Core.csproj", "{A217BE26-E9B2-4D6C-9515-C3603CBDB627}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +43,10 @@ Global
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A217BE26-E9B2-4D6C-9515-C3603CBDB627}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A217BE26-E9B2-4D6C-9515-C3603CBDB627}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A217BE26-E9B2-4D6C-9515-C3603CBDB627}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A217BE26-E9B2-4D6C-9515-C3603CBDB627}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -47,6 +55,7 @@ Global
 		{D4CBEDA7-2BDC-0002-4B1E-201CD3FB8CEE} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 		{8479F82D-7DFF-096E-B1FB-262A7C21F7F4} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
+		{A217BE26-E9B2-4D6C-9515-C3603CBDB627} = {B9875660-A632-4304-A71D-17FDE497AE98}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09699C21-ED43-4667-9AE5-723807C00338}
