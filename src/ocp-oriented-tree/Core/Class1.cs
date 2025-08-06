@@ -1,46 +1,55 @@
-﻿using Boostable.OCPOrientedTree.Base;
+﻿using Boostable.Prototype.OCPOrientedTree.Base;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
-namespace Boostable.OCPOrientedTree.Base
+namespace Boostable.Prototype.OCPOrientedTree.Base
 {
+    public interface ITreeNode
+    {
+        // Just a marker interface for nodes.
+    }
+
     public abstract class TreeNodeProtectedAbstractions
     {
-        internal protected interface ITreeNodeHavingValue<TSelfValue>
+        protected internal interface ITreeNodeHavingValue<TSelfValue> : ITreeNode
         {
-            TSelfValue? Value { get; set; }
+            public TSelfValue? Value { get; set; }
             IReadOnlyTreeNodeHavingValue<TSelfValue> AsReadOnlyWithSelfType();
         }
 
-        internal protected interface IReadOnlyTreeNodeHavingValue<out TSelfValue>
+        protected internal interface IReadOnlyTreeNodeHavingValue<out TSelfValue> : ITreeNode
         {
             TSelfValue? Value { get; }
         }
-        internal protected interface ITreeChildNode<TParentValue>
+
+        protected internal interface ITreeChildNode<TParentValue> : ITreeNode
         {
             ITreeNodeHavingValue<TParentValue> Parent { get; }
+            ITreeParentNode<TTarget>? FindAncestor<TTarget>(int numSkipMatchedAncestor);
+            IReadOnlyTreeParentNode<TTarget>? FindReadOnlyAncestor<TTarget>(int numSkipMatchedAncestor);
             IReadOnlyTreeChildNode<TParentValue> AsReadOnlyWithParentType();
         }
 
-        internal protected interface ITreeChildNode<TSelfValue, TParentValue>
+        protected internal interface ITreeChildNode<TSelfValue, TParentValue>
             : ITreeChildNode<TParentValue>, ITreeNodeHavingValue<TSelfValue>
         {
             IReadOnlyTreeChildNode<TSelfValue, TParentValue> AsReadOnlyWithSelfAndParentType();
         }
 
-        internal protected interface IReadOnlyTreeChildNode<out TParentValue>
+        protected internal interface IReadOnlyTreeChildNode<out TParentValue> : ITreeNode
         {
             IReadOnlyTreeNodeHavingValue<TParentValue> Parent { get; }
+            IReadOnlyTreeParentNode<TTarget>? FindReadOnlyAncestor<TTarget>(int numSkipMatchedAncestor);
         }
 
-        internal protected interface IReadOnlyTreeChildNode<out TSelfValue, out TParentValue>
+        protected internal interface IReadOnlyTreeChildNode<out TSelfValue, out TParentValue>
             : IReadOnlyTreeChildNode<TParentValue>, IReadOnlyTreeNodeHavingValue<TSelfValue>
         {
         }
 
-        internal protected interface IChildrenManager<TParentSelfValue>
+        protected internal interface IChildrenManager<TParentSelfValue>
         {
             ITreeIntermediateNode<TChildValue, TParentSelfValue> Spawn<TChildValue>(TChildValue? value);
             ITreeChildNode<TLeafValue, TParentSelfValue> SpawnLeaf<TLeafValue>(TLeafValue? value);
@@ -48,24 +57,38 @@ namespace Boostable.OCPOrientedTree.Base
             IEnumerable<IReadOnlyTreeChildNode<TChildValue, TParentSelfValue>> GetReadOnlyChildren<TChildValue>();
         }
 
-        internal protected interface ITreeParentNode<TParentSelfValue>
+        protected internal interface ITreeParentNode<TParentSelfValue>
+            : ITreeNodeHavingValue<TParentSelfValue>
         {
             ITreeIntermediateNode<TChildValue, TParentSelfValue> Spawn<TChildValue>(TChildValue? value);
             ITreeChildNode<TLeafValue, TParentSelfValue> SpawnLeaf<TLeafValue>(TLeafValue? value);
             IEnumerable<ITreeChildNode<TChildValue, TParentSelfValue>> GetChildren<TChildValue>();
             IEnumerable<IReadOnlyTreeChildNode<TChildValue, TParentSelfValue>> GetReadOnlyChildren<TChildValue>();
-            IReadOnlyParentNode<TParentSelfValue> AsReadOnlyWithParentType();
+            IReadOnlyTreeParentNode<TParentSelfValue> AsReadOnlyWithParentType();
         }
 
-        internal protected interface IReadOnlyParentNode<TParentSelfValue> 
+        protected internal interface IReadOnlyTreeParentNode<out TParentSelfValue> 
             : IReadOnlyTreeNodeHavingValue<TParentSelfValue>
         {
             IEnumerable<IReadOnlyTreeChildNode<TChildValue, TParentSelfValue>> GetReadOnlyChildren<TChildValue>();
         }
 
-        internal protected interface ITreeIntermediateNode<TParentSelfValue, TValueOfMyParent>
-            : ITreeParentNode<TParentSelfValue>, ITreeChildNode<TParentSelfValue, TValueOfMyParent>
+        protected internal interface ITreeIntermediateNode<TSelfValue, TValueOfMyParent>
+            : ITreeParentNode<TSelfValue>, ITreeChildNode<TSelfValue, TValueOfMyParent>
         {
+            IReadOnlyTreeIntermediateNode<TSelfValue, TValueOfMyParent> AsReadonlyWithSelfAndParentType();
+        }
+
+        protected internal interface IReadOnlyTreeIntermediateNode<out TParentSelfValue, out TValueOfMyParent>
+            : IReadOnlyTreeParentNode<TParentSelfValue>, IReadOnlyTreeChildNode<TParentSelfValue, TValueOfMyParent>
+        {
+        }
+
+        protected internal interface INodeWrapperUniquenizer
+        {
+            TWrapper GetOrCreate<TProtectedNode, TWrapper>(TProtectedNode node, Func<TProtectedNode, TWrapper> factory)
+                where TProtectedNode : class, ITreeNode
+                where TWrapper : class;
         }
     }
 
@@ -74,8 +97,7 @@ namespace Boostable.OCPOrientedTree.Base
         , TreeNodeProtectedAbstractions.ITreeNodeHavingValue<TSelfValue>
         , TreeNodeProtectedAbstractions.IReadOnlyTreeNodeHavingValue<TSelfValue>
     {
-
-        internal protected virtual TSelfValue? ValueProtected { get; set; }
+        protected internal virtual TSelfValue? ValueProtected { get; set; }
 
         TSelfValue? ITreeNodeHavingValue<TSelfValue>.Value
         {
@@ -84,7 +106,8 @@ namespace Boostable.OCPOrientedTree.Base
 
         TSelfValue? IReadOnlyTreeNodeHavingValue<TSelfValue>.Value => ValueProtected;
 
-        internal protected TreeNodeHavingValue(TSelfValue? value)
+        // Constructor for TreeNodeHavingValue
+        protected internal TreeNodeHavingValue(TSelfValue? value)
         {
             ValueProtected = value;
         }
@@ -100,40 +123,81 @@ namespace Boostable.OCPOrientedTree.Base
         , TreeNodeProtectedAbstractions.IReadOnlyTreeChildNode<TParentValue>
         , TreeNodeProtectedAbstractions.IReadOnlyTreeChildNode<TSelfValue, TParentValue>
     {
-        internal protected virtual TreeNodeHavingValue<TParentValue> ParentProtected { get; }
+        protected internal virtual TreeNodeHavingValue<TParentValue> ParentProtected { get; }
+
+        // Constructor for TreeChildNode
+        protected internal TreeChildNode(TreeNodeHavingValue<TParentValue> parent, TSelfValue? value) : base(value)
+        {
+            ParentProtected = parent ?? throw new ArgumentNullException(nameof(parent));
+        }
+
+        protected internal virtual ITreeParentNode<TTarget>? FindAncestorProtected<TTarget>(int numSkipMatchedAncestor)
+        {
+            if (numSkipMatchedAncestor < 0)
+                throw new ArgumentOutOfRangeException(nameof(numSkipMatchedAncestor), "Number of ancestors to skip cannot be negative.");
+
+            object? current = ParentProtected;
+
+            while (current != null)
+            {
+                if (current is ITreeParentNode<TTarget> matched)
+                {
+                    if (numSkipMatchedAncestor == 0)
+                        return matched;
+
+                    numSkipMatchedAncestor--;
+                }
+
+                if (current is ITreeChildNode<TTarget> childNode)
+                {
+                    current = childNode.Parent;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return null;
+        }
 
         ITreeNodeHavingValue<TParentValue> ITreeChildNode<TParentValue>.Parent => ParentProtected;
 
         IReadOnlyTreeNodeHavingValue<TParentValue> IReadOnlyTreeChildNode<TParentValue>.Parent => ParentProtected;
-
-        internal protected TreeChildNode(TreeNodeHavingValue<TParentValue> parent, TSelfValue? value) : base(value)
-        {
-            ParentProtected = parent ?? throw new ArgumentNullException(nameof(parent));
-        }
 
         IReadOnlyTreeChildNode<TParentValue> ITreeChildNode<TParentValue>.AsReadOnlyWithParentType()
             => this;
 
         IReadOnlyTreeChildNode<TSelfValue, TParentValue> ITreeChildNode<TSelfValue, TParentValue>.AsReadOnlyWithSelfAndParentType()
             => this;
+
+        ITreeParentNode<TTarget>? ITreeChildNode<TParentValue>.FindAncestor<TTarget>(int numSkipMatchedAncestor)
+            => FindAncestorProtected<TTarget>(numSkipMatchedAncestor);
+
+        IReadOnlyTreeParentNode<TTarget>? ITreeChildNode<TParentValue>.FindReadOnlyAncestor<TTarget>(int numSkipMatchedAncestor)
+            => FindAncestorProtected<TTarget>(numSkipMatchedAncestor)?.AsReadOnlyWithParentType();
+
+        IReadOnlyTreeParentNode<TTarget>? IReadOnlyTreeChildNode<TParentValue>.FindReadOnlyAncestor<TTarget>(int numSkipMatchedAncestor)
+            => FindAncestorProtected<TTarget>(numSkipMatchedAncestor)?.AsReadOnlyWithParentType();
     }
 
     public class ChildrenManager<TParentSelfValue>
         : TreeNodeProtectedAbstractions
         , TreeNodeProtectedAbstractions.IChildrenManager<TParentSelfValue>
     {
-        internal protected TreeNodeHavingValue<TParentSelfValue> ParentSelfProtected { get; }
-        internal protected object ChildrenSyncLockProtected { get; } = new();
+        protected internal virtual TreeNodeHavingValue<TParentSelfValue> ParentSelfProtected { get; }
+        protected internal virtual object ChildrenSyncLockProtected { get; } = new();
 
-        internal protected virtual IList<ITreeChildNode<TParentSelfValue>> ChildListProtected { get; } = new List<ITreeChildNode<TParentSelfValue>>();
-        internal protected virtual HashSet<ITreeChildNode<TParentSelfValue>> ChildrenSetProtected { get; } = new();
+        protected internal virtual IList<ITreeChildNode<TParentSelfValue>> ChildListProtected { get; } = new List<ITreeChildNode<TParentSelfValue>>();
+        protected internal virtual HashSet<ITreeChildNode<TParentSelfValue>> ChildrenSetProtected { get; } = new();
 
-        internal protected ChildrenManager(TreeNodeHavingValue<TParentSelfValue> parentSelf)
+        // Constructor for ChildrenManager
+        protected internal ChildrenManager(TreeNodeHavingValue<TParentSelfValue> parentSelf)
         {
             ParentSelfProtected = parentSelf ?? throw new ArgumentNullException(nameof(parentSelf));
         }
 
-        internal protected virtual bool TryAddChildProtected(ITreeChildNode<TParentSelfValue> childNode)
+        protected internal virtual bool TryAddChildProtected(ITreeChildNode<TParentSelfValue> childNode)
         {
             lock (ChildrenSyncLockProtected)
             {
@@ -145,9 +209,9 @@ namespace Boostable.OCPOrientedTree.Base
                 return false;
             }
         }
-        internal protected virtual ITreeIntermediateNode<TChildValue, TParentSelfValue> SpawnProtected<TChildValue>(TChildValue? value)
+        protected internal virtual ITreeIntermediateNode<TChildValue, TParentSelfValue> SpawnProtected<TChildValue>(TChildValue? value)
         {
-            var child = new TreeNodeInternal<TChildValue, TParentSelfValue>(ParentSelfProtected, value);
+            var child = new Base.ITreeIntermediateNode<TChildValue, TParentSelfValue>(ParentSelfProtected, value);
             // Assuming TryAddChild is a method that adds the child to the collection
             if (TryAddChildProtected(child))
             {
@@ -158,7 +222,7 @@ namespace Boostable.OCPOrientedTree.Base
             throw new InvalidOperationException("Failed to add child.");
         }
 
-        internal protected virtual ITreeChildNode<TLeafValue, TParentSelfValue> SpawnLeafProtected<TLeafValue>(TLeafValue? value)
+        protected internal virtual ITreeChildNode<TLeafValue, TParentSelfValue> SpawnLeafProtected<TLeafValue>(TLeafValue? value)
         {
             var child = new TreeChildNode<TLeafValue, TParentSelfValue>(ParentSelfProtected, value);
             // Assuming TryAddChild is a method that adds the child to the collection
@@ -169,7 +233,7 @@ namespace Boostable.OCPOrientedTree.Base
             // Safety check to ensure the child was added successfully
             throw new InvalidOperationException("Failed to add child.");
         }
-        internal protected virtual IEnumerable<ITreeChildNode<TChildValue, TParentSelfValue>> GetChildrenProtected<TChildValue>()
+        protected internal virtual IEnumerable<ITreeChildNode<TChildValue, TParentSelfValue>> GetChildrenProtected<TChildValue>()
         {
             lock (ChildrenSyncLockProtected)
             {
@@ -180,7 +244,7 @@ namespace Boostable.OCPOrientedTree.Base
                             .ToArray();
             }
         }
-        internal protected virtual IEnumerable<IReadOnlyTreeChildNode<TChildValue, TParentSelfValue>> GetReadOnlyChildren<TChildValue>()
+        protected internal virtual IEnumerable<IReadOnlyTreeChildNode<TChildValue, TParentSelfValue>> GetReadOnlyChildren<TChildValue>()
         {
             lock (ChildrenSyncLockProtected)
             {
@@ -205,16 +269,17 @@ namespace Boostable.OCPOrientedTree.Base
     public class TreeRootNode<TRootSelfValue>
         : TreeNodeHavingValue<TRootSelfValue>
         , TreeNodeProtectedAbstractions.ITreeParentNode<TRootSelfValue>
-        , TreeNodeProtectedAbstractions.IReadOnlyParentNode<TRootSelfValue>
+        , TreeNodeProtectedAbstractions.IReadOnlyTreeParentNode<TRootSelfValue>
     {
-        internal protected IChildrenManager<TRootSelfValue> ChildrenManagerProtected { get; }
+        protected internal virtual IChildrenManager<TRootSelfValue> ChildrenManagerProtected { get; }
 
-        internal protected virtual ChildrenManager<TRootSelfValue> CreateChildrenManager()
+        protected internal virtual ChildrenManager<TRootSelfValue> CreateChildrenManager()
         {
             return new ChildrenManager<TRootSelfValue>(this);
         }
 
-        internal protected TreeRootNode(TRootSelfValue? value) : base(value)
+        // Constructor for TreeRootNode
+        protected internal TreeRootNode(TRootSelfValue? value) : base(value)
         {
             ChildrenManagerProtected = CreateChildrenManager();
         }
@@ -231,26 +296,28 @@ namespace Boostable.OCPOrientedTree.Base
         IEnumerable<IReadOnlyTreeChildNode<TChildValue, TRootSelfValue>> ITreeParentNode<TRootSelfValue>.GetReadOnlyChildren<TChildValue>()
             => ChildrenManagerProtected.GetReadOnlyChildren<TChildValue>();
 
-        IReadOnlyParentNode<TRootSelfValue> ITreeParentNode<TRootSelfValue>.AsReadOnlyWithParentType()
+        IReadOnlyTreeParentNode<TRootSelfValue> ITreeParentNode<TRootSelfValue>.AsReadOnlyWithParentType()
             => this;
 
-        IEnumerable<IReadOnlyTreeChildNode<TChildValue, TRootSelfValue>> IReadOnlyParentNode<TRootSelfValue>.GetReadOnlyChildren<TChildValue>()
+        IEnumerable<IReadOnlyTreeChildNode<TChildValue, TRootSelfValue>> IReadOnlyTreeParentNode<TRootSelfValue>.GetReadOnlyChildren<TChildValue>()
             => ChildrenManagerProtected.GetReadOnlyChildren<TChildValue>();
     }
 
-    public class TreeNodeInternal<TParentSelfValue, TValueOfMyParent>
+    public class ITreeIntermediateNode<TParentSelfValue, TValueOfMyParent>
         : TreeChildNode<TParentSelfValue, TValueOfMyParent>
         , TreeNodeProtectedAbstractions.ITreeIntermediateNode<TParentSelfValue, TValueOfMyParent>
-        , TreeNodeProtectedAbstractions.IReadOnlyParentNode<TParentSelfValue>
+        , TreeNodeProtectedAbstractions.IReadOnlyTreeParentNode<TParentSelfValue>
+        , TreeNodeProtectedAbstractions.IReadOnlyTreeIntermediateNode<TParentSelfValue, TValueOfMyParent>
     {
-        internal protected IChildrenManager<TParentSelfValue> ChildrenManagerProtected { get; }
+        protected internal virtual IChildrenManager<TParentSelfValue> ChildrenManagerProtected { get; }
 
-        internal protected virtual ChildrenManager<TParentSelfValue> CreateChildrenManager()
+        protected internal virtual ChildrenManager<TParentSelfValue> CreateChildrenManager()
         {
             return new ChildrenManager<TParentSelfValue>(this);
         }
 
-        protected internal TreeNodeInternal(TreeNodeHavingValue<TValueOfMyParent> parent, TParentSelfValue? value) : base(parent, value)
+        // Constructor for ITreeIntermediateNode
+        protected internal ITreeIntermediateNode(TreeNodeHavingValue<TValueOfMyParent> parent, TParentSelfValue? value) : base(parent, value)
         {
             ChildrenManagerProtected = CreateChildrenManager();
         }
@@ -272,20 +339,47 @@ namespace Boostable.OCPOrientedTree.Base
         IEnumerable<IReadOnlyTreeChildNode<TChildValue, TParentSelfValue>> ITreeParentNode<TParentSelfValue>.GetReadOnlyChildren<TChildValue>()
             => ChildrenManagerProtected.GetReadOnlyChildren<TChildValue>();
 
-        IReadOnlyParentNode<TParentSelfValue> ITreeParentNode<TParentSelfValue>.AsReadOnlyWithParentType()
+        IReadOnlyTreeParentNode<TParentSelfValue> ITreeParentNode<TParentSelfValue>.AsReadOnlyWithParentType()
             => this;
 
-        IEnumerable<IReadOnlyTreeChildNode<TChildValue, TParentSelfValue>> IReadOnlyParentNode<TParentSelfValue>.GetReadOnlyChildren<TChildValue>()
+        IEnumerable<IReadOnlyTreeChildNode<TChildValue, TParentSelfValue>> IReadOnlyTreeParentNode<TParentSelfValue>.GetReadOnlyChildren<TChildValue>()
             => ChildrenManagerProtected.GetReadOnlyChildren<TChildValue>();
+
+        IReadOnlyTreeIntermediateNode<TParentSelfValue, TValueOfMyParent> ITreeIntermediateNode<TParentSelfValue, TValueOfMyParent>.AsReadonlyWithSelfAndParentType()
+            => this;
+    }
+
+    public class NodeWrapperUniquenizer
+        : TreeNodeProtectedAbstractions
+        , TreeNodeProtectedAbstractions.INodeWrapperUniquenizer
+    {
+        protected internal sealed class Table<TProtectedNode, TWrapper>
+            where TProtectedNode : class, ITreeNode
+            where TWrapper : class
+        {
+            internal static readonly ConditionalWeakTable<TProtectedNode, TWrapper> Instance = new();
+        }
+
+        protected internal virtual TWrapper GetOrCreate<TProtectedNode, TWrapper>(TProtectedNode node, Func<TProtectedNode, TWrapper> factory)
+            where TProtectedNode : class, ITreeNode
+            where TWrapper : class
+        {
+            TWrapper LocalFactory(TProtectedNode n) => factory(n);
+            return Table<TProtectedNode, TWrapper>.Instance.GetValue(node, LocalFactory);
+        }
+
+        TWrapper INodeWrapperUniquenizer.GetOrCreate<TProtectedNode, TWrapper>(TProtectedNode node, Func<TProtectedNode, TWrapper> factory)
+            => GetOrCreate<TProtectedNode, TWrapper>(node, factory);
     }
 }
 
-namespace Boostable.OCPOrientedTree.Simple
+namespace Boostable.Prototype.OCPOrientedTree.Simple
 {
     public interface IReadOnlySimpleTreeNode<TSelfValue>
     {
         TSelfValue? Value { get; }
-        IEnumerable<ISimpleTreeNode<TChildValue, TSelfValue>> GetRaadOnlyChildren<TChildValue>();
+        IEnumerable<IReadOnlySimpleTreeNode<TChildValue, TSelfValue>> GetReadOnlyChildren<TChildValue>();
+        IReadOnlySimpleTreeNode<TTarget>? FindReadOnlyAncestor<TTarget>(int numSkipMatchedAncestor);
     }
 
     public interface ISimpleTreeNode<TSelfValue>
@@ -293,8 +387,10 @@ namespace Boostable.OCPOrientedTree.Simple
         TSelfValue? Value { get; set; }
         bool TrySpawn<TChildValue>(out ISimpleTreeNode<TChildValue, TSelfValue>? spawned, TChildValue? value = default);
         IEnumerable<ISimpleTreeNode<TChildValue, TSelfValue>> GetChildren<TChildValue>();
-        IEnumerable<ISimpleTreeNode<TChildValue, TSelfValue>> GetRaadOnlyChildren<TChildValue>();
+        IEnumerable<IReadOnlySimpleTreeNode<TChildValue, TSelfValue>> GetReadOnlyChildren<TChildValue>();
         IReadOnlySimpleTreeNode<TSelfValue> AsReadOnly();
+        ISimpleTreeNode<TTarget>? FindAncestor<TTarget>(int numSkipMatchedAncestor);
+        IReadOnlySimpleTreeNode<TTarget>? FindReadOnlyAncestor<TTarget>(int numSkipMatchedAncestor);
     }
 
     public interface IReadOnlySimpleTreeNode<TSelfValue, TParent>
@@ -310,7 +406,51 @@ namespace Boostable.OCPOrientedTree.Simple
         IReadOnlySimpleTreeNode<TSelfValue, TParent> AsReadOnlyWithParentType();
     }
 
-    internal class SimpleTreeNode<TSelfValue> : ISimpleTreeNode<TSelfValue>, IReadOnlySimpleTreeNode<TSelfValue>
+    internal static class SimpleTreeNodeFactory<TSelfValue>
+    {
+        public static SimpleTreeNode<TSelfValue> CreateInstance(TreeNodeProtectedAbstractions.ITreeNodeHavingValue<TSelfValue> nodeInternal)
+        {
+            if (nodeInternal is TreeNodeProtectedAbstractions.ITreeChildNode<TSelfValue> childNodeInternal)
+            {
+                var nodeType = childNodeInternal.GetType();
+
+                // ITreeChildNode<TSelfValue, TParentValue> のインタフェースを探す
+                var targetInterface = nodeType
+                    .GetInterfaces()
+                    .FirstOrDefault(i =>
+                        i.IsGenericType &&
+                        i.GetGenericTypeDefinition() == typeof(TreeNodeProtectedAbstractions.ITreeChildNode<,>) &&
+                        i.GetGenericArguments()[0] == typeof(TSelfValue)
+                    );
+
+                SimpleTreeNode<TSelfValue>? resultInstance = null;
+
+                if (targetInterface != null)
+                {
+                    var parentType = targetInterface.GetGenericArguments()[1]; // TParentValue の実型を取得
+
+                    // typeof(SimpleTreeNode<TSelfValue, TParentValue>) を構築
+                    var constructedType = typeof(SimpleTreeNode<,>)
+                        .MakeGenericType(typeof(TSelfValue), parentType);
+
+                    // コンストラクタ引数は ITreeChildNode<TSelfValue, TParentValue>
+                    resultInstance = Activator.CreateInstance(constructedType, childNodeInternal) as SimpleTreeNode<TSelfValue>;
+                }
+
+                if (resultInstance != null)
+                {
+                    return resultInstance;
+                }
+            }
+            return SimpleTreeNode<TSelfValue>.GetOrCreateInstance(nodeInternal);
+        }
+    }
+
+    internal class SimpleTreeNode
+    {
+        protected static TreeNodeProtectedAbstractions.INodeWrapperUniquenizer NodeWrapperUniquenizer { get; } = new NodeWrapperUniquenizer();
+    }
+    internal class SimpleTreeNode<TSelfValue> : SimpleTreeNode, ISimpleTreeNode<TSelfValue>, IReadOnlySimpleTreeNode<TSelfValue>
     {
         internal TreeNodeProtectedAbstractions.ITreeNodeHavingValue<TSelfValue> NodeInternal { get; }
         public TSelfValue? Value { 
@@ -318,16 +458,26 @@ namespace Boostable.OCPOrientedTree.Simple
             set => NodeInternal.Value = value;
         }
 
-        internal SimpleTreeNode(TreeNodeProtectedAbstractions.ITreeNodeHavingValue<TSelfValue> nodeInternal)
+        internal static SimpleTreeNode<TSelfValue> GetOrCreateInstance(TreeNodeProtectedAbstractions.ITreeNodeHavingValue<TSelfValue> nodeInternal)
+        {
+            _ = nodeInternal ?? throw new ArgumentNullException(nameof(nodeInternal));
+            return NodeWrapperUniquenizer.GetOrCreate(
+                nodeInternal,
+                n => new SimpleTreeNode<TSelfValue>(n)
+            );
+        }
+
+        protected internal SimpleTreeNode(TreeNodeProtectedAbstractions.ITreeNodeHavingValue<TSelfValue> nodeInternal)
         {
             NodeInternal = nodeInternal ?? throw new ArgumentNullException(nameof(NodeInternal));
         }
+
         public bool TrySpawn<TChildValue>(out ISimpleTreeNode<TChildValue, TSelfValue>? spawned, TChildValue? value = default)
         {
             if (NodeInternal is TreeNodeProtectedAbstractions.ITreeParentNode<TSelfValue> parentNode)
             {
                 var spawnedInternal = parentNode.Spawn(value);
-                spawned = new SimpleTreeNode<TChildValue, TSelfValue>(spawnedInternal);
+                spawned = SimpleTreeNode<TChildValue, TSelfValue>.GetOrCreateInstance(spawnedInternal);
                 return true;
             }
             spawned = default;
@@ -336,73 +486,28 @@ namespace Boostable.OCPOrientedTree.Simple
 
         public IEnumerable<ISimpleTreeNode<TChildValue, TSelfValue>> GetChildren<TChildValue>()
         {
-            lock (CacheSyncLock)
-            {
-                if (NodeInternal is not TreeNodeProtectedAbstractions.ITreeParentNode<TSelfValue> parentNode)
-                    return Enumerable.Empty<ISimpleTreeNode<TChildValue, TSelfValue>>();
+            if (NodeInternal is not TreeNodeProtectedAbstractions.ITreeParentNode<TSelfValue> parentNode)
+                return Enumerable.Empty<ISimpleTreeNode<TChildValue, TSelfValue>>();
 
-                var cached = ChildrenCacheRoot.GetOrAdd(
-                    typeof(TChildValue),
-                    _ => new ConcurrentDictionary<TreeNodeProtectedAbstractions.ITreeChildNode<TSelfValue>, object>()
-                );
-
-                return parentNode
-                    .GetChildren<TChildValue>()
-                    .Select(child =>
-                        (ISimpleTreeNode<TChildValue, TSelfValue>)
-                        cached.GetOrAdd(child, c =>
-                            new SimpleTreeNode<TChildValue, TSelfValue>(
-                                (TreeNodeProtectedAbstractions.ITreeChildNode<TChildValue, TSelfValue>)c
-                            )
-                        )
-                    )
-                    .ToArray();
-            }
+            return parentNode
+                .GetChildren<TChildValue>()
+                .Select(child => (ISimpleTreeNode<TChildValue, TSelfValue>)SimpleTreeNodeFactory<TChildValue>.CreateInstance(child));
         }
 
-        private object CacheSyncLock { get; } = new();
-
-        private ConcurrentDictionary<
-            Type,
-            ConcurrentDictionary<TreeNodeProtectedAbstractions.ITreeChildNode<TSelfValue>, object>
-        > ChildrenCacheRoot { get; } = new();
-
-        public IEnumerable<ISimpleTreeNode<TChildValue, TSelfValue>> GetRaadOnlyChildren<TChildValue>()
+        public IEnumerable<IReadOnlySimpleTreeNode<TChildValue, TSelfValue>> GetReadOnlyChildren<TChildValue>()
         {
-            lock (ReadOnlyCacheSyncLock)
-            {
-                if (NodeInternal is not TreeNodeProtectedAbstractions.ITreeParentNode<TSelfValue> parentNode)
-                    return Enumerable.Empty<ISimpleTreeNode<TChildValue, TSelfValue>>();
+            if (NodeInternal is not TreeNodeProtectedAbstractions.ITreeParentNode<TSelfValue> parentNode)
+                return Enumerable.Empty<IReadOnlySimpleTreeNode<TChildValue, TSelfValue>>();
 
-                var cached = ReadOnlyChildrenCacheRoot.GetOrAdd(
-                    typeof(TChildValue),
-                    _ => new ConcurrentDictionary<TreeNodeProtectedAbstractions.IReadOnlyTreeChildNode<TSelfValue>, object>()
-                );
-
-                return parentNode
-                    .GetReadOnlyChildren<TChildValue>()
-                    .Select(child =>
-                        (ISimpleTreeNode<TChildValue, TSelfValue>)
-                        cached.GetOrAdd(child, c =>
-                            new SimpleTreeNode<TChildValue, TSelfValue>(
-                                (TreeNodeProtectedAbstractions.ITreeChildNode<TChildValue, TSelfValue>)c
-                            )
-                        )
-                    )
-                    .ToArray();
-            }
+            return parentNode
+                .GetChildren<TChildValue>()
+                .Select(child => (IReadOnlySimpleTreeNode<TChildValue, TSelfValue>)SimpleTreeNodeFactory<TChildValue>.CreateInstance(child));
         }
-        private object ReadOnlyCacheSyncLock { get; } = new();
-
-        private ConcurrentDictionary<
-            Type,
-            ConcurrentDictionary<TreeNodeProtectedAbstractions.IReadOnlyTreeChildNode<TSelfValue>, object>
-        > ReadOnlyChildrenCacheRoot { get; } = new();
 
         public override bool Equals(object? obj)
         {
             return obj is SimpleTreeNode<TSelfValue> other &&
-                   ReferenceEquals(NodeInternal, other.NodeInternal);
+                           NodeInternal.Equals(other.NodeInternal);
         }
 
         public override int GetHashCode()
@@ -412,6 +517,23 @@ namespace Boostable.OCPOrientedTree.Simple
 
         public IReadOnlySimpleTreeNode<TSelfValue> AsReadOnly()
             => this;
+
+        public ISimpleTreeNode<TTarget>? FindAncestor<TTarget>(int numSkipMatchedAncestor)
+        {
+            if (NodeInternal is not TreeNodeProtectedAbstractions.ITreeChildNode<TSelfValue> nodeInternalAsAChild)
+                return null;
+
+            var retval = nodeInternalAsAChild.FindAncestor<TTarget>(numSkipMatchedAncestor);
+            if (retval == null)
+                return null;
+
+            return SimpleTreeNode<TTarget>.GetOrCreateInstance(retval);
+        }
+
+        public IReadOnlySimpleTreeNode<TTarget>? FindReadOnlyAncestor<TTarget>(int numSkipMatchedAncestor)
+        {
+            return FindAncestor<TTarget>(numSkipMatchedAncestor)?.AsReadOnly();
+        }
     }
 
     internal sealed class SimpleTreeNode<TSelfValue, TParentValue>
@@ -420,16 +542,25 @@ namespace Boostable.OCPOrientedTree.Simple
     {
         public ISimpleTreeNode<TParentValue> Parent { get; }
 
+        internal static SimpleTreeNode<TSelfValue, TParentValue> GetOrCreateInstance(TreeNodeProtectedAbstractions.ITreeChildNode<TSelfValue, TParentValue> nodeInternal)
+        {
+            _ = nodeInternal ?? throw new ArgumentNullException(nameof(nodeInternal));
+            return NodeWrapperUniquenizer.GetOrCreate(
+                nodeInternal,
+                n => new SimpleTreeNode<TSelfValue, TParentValue>(n)
+            );
+        }
+
         internal SimpleTreeNode(TreeNodeProtectedAbstractions.ITreeChildNode<TSelfValue, TParentValue> nodeInternal)
             : base(nodeInternal)
         {
-            Parent = new SimpleTreeNode<TParentValue>(nodeInternal.Parent);
+            Parent = SimpleTreeNode<TParentValue>.GetOrCreateInstance(nodeInternal.Parent);
         }
 
         public override bool Equals(object? obj)
         {
-            return obj is SimpleTreeNode<TSelfValue, TParentValue> other &&
-                   ReferenceEquals(NodeInternal, other.NodeInternal);
+            return obj is SimpleTreeNode<TSelfValue> other &&
+                           NodeInternal.Equals(other.NodeInternal);
         }
 
         public override int GetHashCode()
@@ -445,7 +576,7 @@ namespace Boostable.OCPOrientedTree.Simple
     {
         public static ISimpleTreeNode<TRootSelfValue> CreateRootNode<TRootSelfValue>(TRootSelfValue? value)
         {
-            return new SimpleTreeNode<TRootSelfValue>(new TreeRootNode<TRootSelfValue>(value));
+            return SimpleTreeNode<TRootSelfValue>.GetOrCreateInstance(new TreeRootNode<TRootSelfValue>(value));
         }
     }
 }
