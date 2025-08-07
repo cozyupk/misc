@@ -21,9 +21,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0010_ConsoleApp_ja_JP", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0020_ConsoleApp_en_US", "src\task-continuation-probe\ConsoleApp_en_US\0020_ConsoleApp_en_US.csproj", "{1AE5A33A-8EEB-599D-9A91-760F458DA10C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ocp-oriented-tree", "ocp-oriented-tree", "{B9875660-A632-4304-A71D-17FDE497AE98}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02_ocp-oriented-tree", "02_ocp-oriented-tree", "{B9875660-A632-4304-A71D-17FDE497AE98}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\ocp-oriented-tree\Core\Core.csproj", "{A217BE26-E9B2-4D6C-9515-C3603CBDB627}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "21_what-roslyn-talk-about", "21_what-roslyn-talk-about", "{4B2B0653-0608-460E-9458-301DC6DD5D58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoslynSpeaks", "src\what-roslyn-talk-about\RoslynSpeaks.csproj", "{985F4165-B48F-D281-B36D-3AD0C88800A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +51,10 @@ Global
 		{A217BE26-E9B2-4D6C-9515-C3603CBDB627}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A217BE26-E9B2-4D6C-9515-C3603CBDB627}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A217BE26-E9B2-4D6C-9515-C3603CBDB627}.Release|Any CPU.Build.0 = Release|Any CPU
+		{985F4165-B48F-D281-B36D-3AD0C88800A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{985F4165-B48F-D281-B36D-3AD0C88800A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{985F4165-B48F-D281-B36D-3AD0C88800A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{985F4165-B48F-D281-B36D-3AD0C88800A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -56,6 +64,7 @@ Global
 		{8479F82D-7DFF-096E-B1FB-262A7C21F7F4} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 		{1AE5A33A-8EEB-599D-9A91-760F458DA10C} = {DDB4EF12-CC4E-5E88-E6FC-71A802F4DE97}
 		{A217BE26-E9B2-4D6C-9515-C3603CBDB627} = {B9875660-A632-4304-A71D-17FDE497AE98}
+		{985F4165-B48F-D281-B36D-3AD0C88800A1} = {4B2B0653-0608-460E-9458-301DC6DD5D58}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09699C21-ED43-4667-9AE5-723807C00338}
