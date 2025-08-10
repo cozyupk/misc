@@ -1,20 +1,13 @@
-﻿using Boostable.WhatTalkAbout.Abstractions;
-using Boostable.WhatTalkAbout.Base;
-using Microsoft.CodeAnalysis.CSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
+﻿
 /****************
  * Abstractions *
  ****************/
 
 namespace Boostable.WhatTalkAbout.Abstractions
 {
+    using System;
+    using System.Threading;
+
     public interface IPromptForTalking
     {
         // Just a marker interface for the prompt.
@@ -32,7 +25,6 @@ namespace Boostable.WhatTalkAbout.Abstractions
     public interface ITalkChapter
     {
         public string Name { get; }
-
     }
 
     public interface ITestimonyWithChapterAndPrompt<out TPrompt>
@@ -42,7 +34,6 @@ namespace Boostable.WhatTalkAbout.Abstractions
         TPrompt? Prompt { get; }
         Exception Testimony { get; }
     };
-
 
     public interface ITestimonyWithChapter
     {
@@ -58,49 +49,14 @@ namespace Boostable.WhatTalkAbout.Abstractions
         Exception Testimony { get; }
     };
 
-    public interface IReadOnlyPrerequisite<out TPrompt>
-        where TPrompt : class, IPromptForTalking<TPrompt>
+    public interface IReadOnlyArtifacts
     {
-        IReadOnlyList<TPrompt> Prompts { get; }
+        // For extension points.
     }
 
-    public interface IPrerequisite<TPrompt> : IReadOnlyPrerequisite<TPrompt>
-        where TPrompt : class, IPromptForTalking<TPrompt>
+    public interface IArtifacts
     {
-        new IReadOnlyList<TPrompt> Prompts { get; set; } // 変更はコレ経由
-    }
-
-    public interface ITestimony<TPrompt, out TReadOnlyPrerequisite>
-        where TPrompt : class, IPromptForTalking<TPrompt>
-        where TReadOnlyPrerequisite : class, IReadOnlyPrerequisite<TPrompt>
-    {
-        TReadOnlyPrerequisite Prerequisite { get; }
-
-        bool IsMeaningful { get; }
-
-        IReadOnlyList<Exception> GeneralTestimony { get; }
-
-        IReadOnlyList<ITestimonyWithChapterAndPrompt<TPrompt>> AllTestimony { get; }
-
-        IReadOnlyDictionary<
-            (ITalkChapter, TPrompt),
-            IReadOnlyList<Exception>
-        > TestimonyForEachChapterAndPrompt { get; }
-
-        IReadOnlyDictionary<
-            TPrompt,
-            IReadOnlyList<ITestimonyWithChapter>
-        > TestimonyForEachPrompt { get; }
-
-        IReadOnlyDictionary<
-            ITalkChapter,
-            IReadOnlyList<ITestimonyWithPrompt<TPrompt>>
-        > TestimonyForEachChapter { get; }
-    }
-
-    public interface ITalkOutline<out TTalkAbout>
-    {
-        TTalkAbout TalkAbout();
+        // For extension points.
     }
 }
 
@@ -108,41 +64,136 @@ namespace Boostable.WhatTalkAbout.Abstractions
  * Base *
 *********/
 
-namespace Boostable.WhatTalkAbout.Base {
-    public class TalkOutlineBase<TPrompt, TReadOnlyPrerequisite, TPrerequisite>
-        : ITalkOutline<ITestimony<TPrompt, TReadOnlyPrerequisite>>, ITestimony<TPrompt, TReadOnlyPrerequisite>
-        where TPrompt : class, IPromptForTalking<TPrompt>
-        where TReadOnlyPrerequisite : class, IReadOnlyPrerequisite<TPrompt>
-        where TPrerequisite : IPrerequisite<TPrompt>, TReadOnlyPrerequisite, new()
+namespace Boostable.WhatTalkAbout.Base
+{
+    using Boostable.WhatTalkAbout.Abstractions;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Runtime.CompilerServices;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    public abstract class TalkSessionAbstractions
     {
+        public interface ITestimonyBase
+        {
+            bool IsMeaningful { get; }
+            IReadOnlyList<Exception> GeneralTestimony { get; }
+        }
 
-        bool ITestimony<TPrompt, TReadOnlyPrerequisite>.IsMeaningful
-            => IsMeaningful;
+        public interface ITalkOutlineBase
+        {
+            IReadOnlyList<ITalkChapter> TalkChapters { get; }
+        }
+    }
 
-        IReadOnlyList<Exception> ITestimony<TPrompt, TReadOnlyPrerequisite>.GeneralTestimony
-            => GeneralTestimony;
+    public abstract class TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts> : TalkSessionAbstractions
+        where TPrompt : class, IPromptForTalking<TPrompt>
+        where TReadOnlyArtifacts : class, IReadOnlyArtifacts
+        where TArtifacts : class, TReadOnlyArtifacts, IArtifacts, new()
+    {
+        public interface IReadOnlyPrerequisite
+        {
+            IReadOnlyList<TPrompt> Prompts { get; }
+            TReadOnlyArtifacts Artifacts { get; }
+        }
 
-        IReadOnlyList<ITestimonyWithChapterAndPrompt<TPrompt>> ITestimony<TPrompt, TReadOnlyPrerequisite>.AllTestimony
-            => AllTestimony;
+        public interface IPrerequisite : IReadOnlyPrerequisite
+        {
+            new TArtifacts Artifacts { get; }
 
-        IReadOnlyDictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>> ITestimony<TPrompt, TReadOnlyPrerequisite>.TestimonyForEachChapterAndPrompt
-            => TestimonyForEachChapterAndPrompt;
+            void SetPrompt(IReadOnlyList<TPrompt> prompts);
+        }
 
-        IReadOnlyDictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>> ITestimony<TPrompt, TReadOnlyPrerequisite>.TestimonyForEachPrompt
-            => TestimonyForEachPrompt;
+        public interface ITestimony : ITestimonyBase
+        {
+            IReadOnlyPrerequisite Prerequisite { get; }
 
-        IReadOnlyDictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>> ITestimony<TPrompt, TReadOnlyPrerequisite>.TestimonyForEachChapter
-            => TestimonyForEachChapter;
+            IReadOnlyList<ITestimonyWithChapterAndPrompt<TPrompt>> AllTestimony { get; }
 
-        ITestimony<TPrompt, TReadOnlyPrerequisite> ITalkOutline<ITestimony<TPrompt, TReadOnlyPrerequisite>>.TalkAbout()
-            => this;
+            IReadOnlyDictionary<
+                (ITalkChapter, TPrompt),
+                IReadOnlyList<Exception>
+            > TestimonyForEachChapterAndPrompt { get; }
 
-        TReadOnlyPrerequisite ITestimony<TPrompt, TReadOnlyPrerequisite>.Prerequisite => Prerequisite;
+            IReadOnlyDictionary<
+                TPrompt,
+                IReadOnlyList<ITestimonyWithChapter>
+            > TestimonyForEachPrompt { get; }
 
-        protected TPrerequisite Prerequisite { get; } = new TPrerequisite();
+            IReadOnlyDictionary<
+                ITalkChapter,
+                IReadOnlyList<ITestimonyWithPrompt<TPrompt>>
+            > TestimonyForEachChapter { get; }
+        }
 
+        public interface ITalkOutline : ITalkOutlineBase
+        {
+            ITestimony TalkAbout();
+            Task<ITestimony> TalkAboutAsync();
+        }
+
+    }
+
+    public class TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
+        : TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
+        , TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITestimony
+        , TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITalkOutline
+        where TPrompt : class, IPromptForTalking<TPrompt>
+        where TReadOnlyArtifacts : class, IReadOnlyArtifacts
+        where TArtifacts : class, IArtifacts, TReadOnlyArtifacts, new()
+    {
+        bool ITestimonyBase.IsMeaningful => IsMeaningful;
+
+        IReadOnlyPrerequisite ITestimony.Prerequisite => Prerequisite;
+
+        IReadOnlyList<Exception> ITestimonyBase.GeneralTestimony
+            => [.. GeneralTestimony];
+
+        IReadOnlyList<ITestimonyWithChapterAndPrompt<TPrompt>> ITestimony.AllTestimony
+            => [.. AllTestimony];
+
+        IReadOnlyDictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>> ITestimony.TestimonyForEachChapterAndPrompt
+            => new Dictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>>(TestimonyForEachChapterAndPrompt);
+
+        IReadOnlyDictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>> ITestimony.TestimonyForEachPrompt
+            => new Dictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>>(TestimonyForEachPrompt);
+
+        IReadOnlyDictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>> ITestimony.TestimonyForEachChapter
+            => new Dictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>>(TestimonyForEachChapter);
+
+        IReadOnlyList<ITalkChapter> ITalkOutlineBase.TalkChapters => TalkChaptersInternal;
+
+        ITestimony ITalkOutline.TalkAbout()
+            => TalkAbout();
+        Task<ITestimony> ITalkOutline.TalkAboutAsync()
+            => TalkAboutAsync();
+
+        protected class ConcretePrerequisite : IPrerequisite
+        {
+            public List<TPrompt>? PromptsInternal { get; set; }
+            public TArtifacts ArtifactsInternal { get; } = new();
+
+            IReadOnlyList<TPrompt> IReadOnlyPrerequisite.Prompts
+                => PromptsInternal as IReadOnlyList<TPrompt> ?? throw new InvalidOperationException("The prompt has not yet set internally.");
+
+            TArtifacts IPrerequisite.Artifacts => ArtifactsInternal as TArtifacts;
+
+            TReadOnlyArtifacts IReadOnlyPrerequisite.Artifacts => ArtifactsInternal as TReadOnlyArtifacts;
+
+            void IPrerequisite.SetPrompt(IReadOnlyList<TPrompt> prompts)
+            {
+                if (prompts is null) throw new ArgumentNullException(nameof(prompts));
+                if (PromptsInternal is not null && PromptsInternal.Count > 0)
+                {
+                    throw new InvalidOperationException("Prompts have already been set. Cannot set them again.");
+                }
+                PromptsInternal = prompts as List<TPrompt> ?? [.. prompts];
+            }
+        }
+        protected IPrerequisite Prerequisite { get; } = new ConcretePrerequisite();
         protected virtual bool IsMeaningful => AllTestimony.Any();
-
         private List<Exception> GeneralTestimony { get; } = [];
         private object SyncLockGeneralTestimony { get; } = new object();
         private List<ITestimonyWithChapterAndPrompt<TPrompt>> AllTestimony { get; } = [];
@@ -154,21 +205,50 @@ namespace Boostable.WhatTalkAbout.Base {
         private Dictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>> TestimonyForEachChapter { get; } = [];
         private object SyncLockTestimonyForEachChapter { get; } = new object();
 
+        private List<ITalkChapter> TalkChaptersInternal { get; }
 
         protected internal TalkOutlineBase(
-            IReadOnlyList<TPrompt> prompts
+            IReadOnlyList<TPrompt> prompts,
+            params ITalkChapter[] chapters
         )
         {
-            Prerequisite.Prompts = prompts ?? throw new ArgumentNullException(nameof(prompts));
+            _ = prompts ?? throw new ArgumentNullException(nameof(prompts));
+            Prerequisite.SetPrompt(prompts);
+            TalkChaptersInternal = chapters?.ToList() ?? [];
         }
 
-        protected void AddTestimony<TKey, TValue>(TKey key, TValue value, Dictionary<TKey, IReadOnlyList<TValue>> dictionary, object syncLock)
+        protected virtual void PrepareForTalk()
+        {
+            // This method can be overridden to prepare the talk session.
+            // For example, it can be used to arrange codes or set up the environment.
+        }
+
+        protected ITestimony TalkAbout()
+        {
+            PrepareForTalk();
+            return this;
+        }
+
+        protected virtual Task PrepareForTalkAsync()
+        {
+            // This method can be overridden to prepare the talk session asynchronously.
+            // For example, it can be used to arrange codes or set up the environment.
+            return Task.CompletedTask;
+        }
+
+        protected async Task<ITestimony> TalkAboutAsync()
+        {
+            await PrepareForTalkAsync();
+            return this;
+        }
+
+        internal void AddTestimony<TKey, TValue>(TKey key, TValue value, Dictionary<TKey, IReadOnlyList<TValue>> dictionary, object syncLock)
         {
             lock (syncLock)
             {
                 if (!dictionary.TryGetValue(key, out var existing))
                 {
-                    dictionary[key] = new List<TValue> { value };
+                    dictionary[key] = [value];
                     return;
                 }
 
@@ -185,11 +265,10 @@ namespace Boostable.WhatTalkAbout.Base {
         }
 
         protected virtual void AddTestimony(
-            ITalkChapter? chapter,
-            TPrompt? prompt,
-            Exception testimony
-        )
-        {
+            Exception testimony,
+            ITalkChapter? chapter = null,
+            TPrompt? prompt = null
+        ) {
             if (testimony == null) throw new ArgumentNullException(nameof(testimony));
 
             lock (SyncLockAllTestimony)
@@ -270,7 +349,7 @@ namespace Boostable.WhatTalkAbout.Base {
             public Exception Testimony { get; }
         };
 
-        public sealed class ChapterPromptReferenceComparer
+        protected sealed class ChapterPromptReferenceComparer
             : IEqualityComparer<(ITalkChapter, TPrompt)>
         {
             public static ChapterPromptReferenceComparer Instance { get; } = new();
@@ -291,21 +370,32 @@ namespace Boostable.WhatTalkAbout.Base {
                 return ((h1 << 5) | (h1 >> 27)) ^ h2;
             }
         }
+
+        protected class TalkChapter(string name) : ITalkChapter
+        {
+            public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+
+            public override string ToString()
+            {
+                return Name;
+            }
+        }
     }
 
-    public abstract class TalkSessionBase<TPrompt, TReadOnlyPrerequisite, TPrerequisite>
+    public abstract class TalkSessionBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
+        : TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
         where TPrompt : class, IPromptForTalking<TPrompt>
-        where TReadOnlyPrerequisite : class, IReadOnlyPrerequisite<TPrompt>
-        where TPrerequisite : class, IPrerequisite<TPrompt>, TReadOnlyPrerequisite, new()
+        where TReadOnlyArtifacts : class, IReadOnlyArtifacts
+        where TArtifacts : class, TReadOnlyArtifacts, IArtifacts, new()
     {
-        protected ITalkOutline<ITestimony<TPrompt, TReadOnlyPrerequisite>> Outline { get; }
+        protected ITalkOutline Outline { get; }
 
         private int _hasRun = 0;
 
         public TalkSessionBase(
             TPrompt basePrompt,
             Func<TPrompt, IReadOnlyList<TPrompt>>? promptVariationBuilder = null,
-            Func<IReadOnlyList<TPrompt>, ITalkOutline<ITestimony<TPrompt, TReadOnlyPrerequisite>>>? outlineFactory = null
+            Func<IReadOnlyList<TPrompt>, ITalkOutline>? outlineFactory = null
         )
         {
             promptVariationBuilder ??= basePrompt => DefaultVariationBuilder(basePrompt);
@@ -322,12 +412,12 @@ namespace Boostable.WhatTalkAbout.Base {
             }
         }
 
-        public virtual ITestimony<TPrompt, TReadOnlyPrerequisite> TalkAbout()
+        public virtual ITestimony TalkAbout()
         {
             return Outline.TalkAbout();
         }
 
-        public virtual Task<ITestimony<TPrompt, TReadOnlyPrerequisite>> TalkAboutAsync()
+        public virtual Task<ITestimony> TalkAboutAsync()
         {
             return Task.FromResult(Outline.TalkAbout());
         }
@@ -338,21 +428,30 @@ namespace Boostable.WhatTalkAbout.Base {
             return [basePrompt.Clone("Default Prompt (without promptVariationBuilder)")];
         }
 
-        protected internal virtual ITalkOutline<ITestimony<TPrompt, TReadOnlyPrerequisite>> DefaultOutlineFactory(
+        protected internal virtual TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITalkOutline DefaultOutlineFactory(
             IReadOnlyList<TPrompt> prompts
         ) {
             // Default implementation that creates a simple outline with the provided arrange code and prompts.
-            return new TalkOutlineBase<TPrompt, TReadOnlyPrerequisite, TPrerequisite>(prompts);
+            return new TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>(prompts);
         }
     }
 }
 
-namespace Boostable.WhatRoslynTalkAbout
+/****************
+ * ArrangeCodes *
+ ****************/
+namespace Boostable.WhatRoslynTalkAbout.ArrangeCodes
 {
-    /************
-     * Parsable *
-     ************/
+
+    using Boostable.WhatTalkAbout.Abstractions;
+    using Boostable.WhatTalkAbout.Base;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     public readonly record struct VirtualSource
+
     {
         public string Path { get; }
         public string Code { get; }
@@ -363,79 +462,90 @@ namespace Boostable.WhatRoslynTalkAbout
         }
     }
 
-    public interface IRoslynParsingPromptForTalking<out TSelf> : IPromptForTalking<TSelf>
-        where TSelf : class, IRoslynParsingPromptForTalking<TSelf>
+    public interface IArrangeCodePromptForTalking<out TSelf> : IPromptForTalking<TSelf>
+        where TSelf : class, IArrangeCodePromptForTalking<TSelf>
     {
-        Func<VirtualSource> ArrangeCode { get; }
-        public CSharpParseOptions ParseOptions { get; }
-        public CSharpCompilationOptions CompilationOptions { get; }
-        public Encoding EncodingForParse { get; set; }
     }
 
-    public interface IRoslynParsingReadOnlyPrerequisite<out TPrompt> : IReadOnlyPrerequisite<TPrompt>
-        where TPrompt : class, IRoslynParsingPromptForTalking<TPrompt>
+    public interface IReadOnlyArrangeCodeArtifacts : IReadOnlyArtifacts
     {
-        VirtualSource TargetCode { get; }
+        IReadOnlyList<VirtualSource>? TargetCodes { get; }
     }
 
-    public interface IRoslynParsingPrerequisite<TPrompt> : IRoslynParsingReadOnlyPrerequisite<TPrompt>, IPrerequisite<TPrompt>
-        where TPrompt : class, IRoslynParsingPromptForTalking<TPrompt>
+    public interface IArrangeCodeArtifacts : IArtifacts, IReadOnlyArtifacts
     {
-        new VirtualSource TargetCode { get; set; }
+        void SetTargetCodes(IReadOnlyList<VirtualSource> targetCodes);
     }
 
-    public interface IRoslynParsingTestimony<TPrompt, out TReadOnlyPrerequisite> : ITestimony<TPrompt, TReadOnlyPrerequisite>
-        where TPrompt : class, IRoslynParsingPromptForTalking<TPrompt>
-        where TReadOnlyPrerequisite : class, IRoslynParsingReadOnlyPrerequisite<TPrompt>
+    public class ArrangeCodeTalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
+        : TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
+        where TPrompt : class, IArrangeCodePromptForTalking<TPrompt>
+        where TReadOnlyArtifacts : class, IReadOnlyArrangeCodeArtifacts
+        where TArtifacts : class, TReadOnlyArtifacts, IArrangeCodeArtifacts, IArtifacts, new()
     {
-        TReadOnlyPrerequisite RoslynParsingPrerequisite { get; }
-    }
+        protected int _hasArranged = 0;
 
-    public interface IRoslynParsingTalkOutline<out TTalkAbout> : ITalkOutline<TTalkAbout>
-    {
-        void ParseCodes();
-        Task ParseCodesAsync(CancellationToken cancellationToken);
-    }
-
-    public class RoslynParsingTalkOutlineBase<TPrompt, TReadOnlyPrerequisite, TPrerequisite>
-        : TalkOutlineBase<TPrompt, TReadOnlyPrerequisite, TPrerequisite>
-        , IRoslynParsingTalkOutline<IRoslynParsingTestimony<TPrompt, TReadOnlyPrerequisite>>, IRoslynParsingTestimony<TPrompt, TReadOnlyPrerequisite>
-        where TPrompt : class, IRoslynParsingPromptForTalking<TPrompt>
-        where TReadOnlyPrerequisite : class, IRoslynParsingReadOnlyPrerequisite<TPrompt>
-        where TPrerequisite : IRoslynParsingPrerequisite<TPrompt>, TReadOnlyPrerequisite, new()
-    {
-        TReadOnlyPrerequisite IRoslynParsingTestimony<TPrompt, TReadOnlyPrerequisite>.RoslynParsingPrerequisite => Prerequisite;
-
-        protected int _hasParsed = 0;
-
-        protected internal RoslynParsingTalkOutlineBase(
-            IReadOnlyList<TPrompt> prompts
-        ) : base(prompts)
+        private static ITalkChapter TalkChaper { get; } = new TalkChapter("Arranging Codes Chapter");
+        protected Func<IEnumerable<VirtualSource>> FuncToArrangeCodes { get; }
+        protected internal ArrangeCodeTalkOutlineBase(
+            Func<IEnumerable<VirtualSource>> funcToArrangeCodes,
+            IReadOnlyList<TPrompt> prompts,
+            params ITalkChapter[] chapters
+        ) : base(prompts, [TalkChaper, .. chapters])
         {
+            FuncToArrangeCodes = funcToArrangeCodes ?? throw new ArgumentNullException(nameof(funcToArrangeCodes));
         }
 
-        void IRoslynParsingTalkOutline<IRoslynParsingTestimony<TPrompt, TReadOnlyPrerequisite>>.ParseCodes()
-            => ParseCodes();
+        protected internal virtual void ArrangeCodes()
+        {
+            try
+            {
+                Prerequisite.Artifacts.SetTargetCodes([.. FuncToArrangeCodes()]);
+            }
+            catch (Exception ex)
+            {
+                AddTestimony(
+                    ex,
+                    TalkChaper
+                );
+            }
+        }
 
-        Task IRoslynParsingTalkOutline<IRoslynParsingTestimony<TPrompt, TReadOnlyPrerequisite>>.ParseCodesAsync(CancellationToken cancellationToken)
-            => ParseCodesAsync(cancellationToken);
+        protected override void PrepareForTalk()
+        {
+            if (Interlocked.CompareExchange(ref _hasArranged, 1, 0) != 0)
+            {
+                throw new InvalidOperationException("The codes have already been arranged. Let them arrange only once per a session.");
+            }
+
+            base.PrepareForTalk();
+            ArrangeCodes();
+        }
+
+        protected override async Task PrepareForTalkAsync()
+        {
+            if (Interlocked.CompareExchange(ref _hasArranged, 1, 0) != 0)
+            {
+                throw new InvalidOperationException("The codes have already been arranged. Let them arrange only once per a session.");
+            }
+
+            await base.PrepareForTalkAsync();
+            ArrangeCodes();
+        }
+    }
+}
+
+
+/*
+public CSharpParseOptions ParseOptions { get; }
+public CSharpCompilationOptions CompilationOptions { get; }
+public Encoding EncodingForParse { get; set; }
 
         protected internal virtual void ParseCodes()
         {
-            /*
             if (Interlocked.CompareExchange(ref _hasParsed, 1, 0) != 0)
             {
-                throw new InvalidOperationException("The code has already been Parsed. Let it Parse only once per session.");
-            }
-
-            try
-            {
-                Prerequisite.TargetCode = Prerequisite.ArrangeCode();
-            }
-            catch (Exception)
-            {
-                // TODO: Let the exception be into the IWhatRoslynTalkAbout instance.
-                throw;
+                throw new InvalidOperationException("The codes have already been parsed. Let them parse only once per a session.");
             }
 
             foreach (var prompt in Prerequisite.Prompts)
@@ -451,15 +561,10 @@ namespace Boostable.WhatRoslynTalkAbout
                     throw;
                 }
             }
-            */
         }
 
         protected internal virtual Task ParseCodesAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
-        IRoslynParsingTestimony<TPrompt, TReadOnlyPrerequisite> ITalkOutline<IRoslynParsingTestimony<TPrompt, TReadOnlyPrerequisite>>.TalkAbout()
-            => this;
-    }
+{
+    return Task.CompletedTask;
 }
+*/
