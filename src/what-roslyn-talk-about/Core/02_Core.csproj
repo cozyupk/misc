@@ -16,4 +16,8 @@
 		<PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\..\what-talk-about\Abstractions\210100_Abstractions.csproj" />
+	</ItemGroup>
+
 </Project>

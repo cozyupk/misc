@@ -3,102 +3,8 @@
  * Abstractions *
  ****************/
 
-using System;
 using System.IO;
 using System.Reflection;
-using System.Threading;
-
-namespace Boostable.WhatTalkAbout.Abstractions
-{
-    using System;
-    using System.Threading;
-
-    public interface IPromptForTalking
-    {
-        // Just a marker interface for the prompt.
-    }
-
-    public interface IPromptForTalking<out TSelf> : IPromptForTalking
-        where TSelf : class, IPromptForTalking<TSelf>
-    {
-        string Label { get; }
-        CancellationToken CancellationToken { get; }
-
-        TSelf Clone(string label);
-    }
-
-    public interface ITalkChapter
-    {
-        public string Name { get; }
-    }
-
-    public interface ITestimonyWithChapterAndPrompt<out TPrompt>
-        where TPrompt : class, IPromptForTalking<TPrompt>
-    {
-        ITalkChapter? Chapter { get; }
-        TPrompt? Prompt { get; }
-        Exception Testimony { get; }
-    };
-
-    public interface ITestimonyWithChapter
-    {
-        ITalkChapter? Chapter { get; }
-        Exception Testimony { get; }
-    };
-
-    public interface ITestimonyWithPrompt<out TPrompt>
-        where TPrompt : class, IPromptForTalking<TPrompt>
-    {
-        TPrompt? Prompt { get; }
-
-        Exception Testimony { get; }
-    };
-
-    public interface IReadOnlyArtifacts
-    {
-        // For extension points.
-    }
-
-    public interface IArtifacts
-    {
-        // For extension points.
-    }
-}
-
-namespace Boostable.WhatTalkAbout.AssemblyLoading
-{
-    public abstract class AssemblyLoadingAbstractions
-    {
-        /// <summary>
-        /// 読み込んだ Assembly と、その寿命を管理する Lease のペア。
-        /// Lease が null の場合は Unload 非対応。
-        /// </summary>
-        public readonly struct LoadedAssembly(Assembly assembly, IDisposable? lease = null)
-        {
-            public Assembly Assembly { get; } = assembly ?? throw new ArgumentNullException(nameof(assembly));
-            public IDisposable? Lease { get; } = lease;
-            public bool CanUnload => Lease != null;
-        }
-
-        /// <summary>
-        /// 読み込み時の任意オプション。
-        /// </summary>
-        public sealed class AssemblyLoadOptions(string? logicalName, bool leaveStreamsOpen, CancellationToken cancellationToken)
-        {
-            public string? LogicalName { get; } = logicalName;
-            public bool LeaveStreamsOpen { get; } = leaveStreamsOpen;
-            public CancellationToken CancellationToken { get; } = cancellationToken;
-        }
-        /// <summary>
-        /// .NET Standard 側が依存する抽象。ホスト側が ALC 等で実装。
-        /// </summary>
-        public interface IAssemblyLoader
-        {
-            LoadedAssembly LoadFromStreams(Stream pe, Stream? pdb = null, AssemblyLoadOptions? options = null);
-            bool IsUnloadSupported { get; }
-        }
-    }
-}
 
 
 /********
@@ -107,8 +13,7 @@ namespace Boostable.WhatTalkAbout.AssemblyLoading
 
 namespace Boostable.WhatTalkAbout.Base
 {
-    using Boostable.WhatTalkAbout.Abstractions;
-    using Boostable.WhatTalkAbout.AssemblyLoading;
+    using global::Boostable.WhatTalkAbout.Abstractions;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -116,365 +21,92 @@ namespace Boostable.WhatTalkAbout.Base
     using System.Threading;
     using System.Threading.Tasks;
 
-    public abstract class TalkSessionAbstractions : AssemblyLoadingAbstractions
-    {
-        public interface ITestimonyBase
-        {
-            bool IsMeaningful { get; }
-            IReadOnlyList<Exception> GeneralTestimony { get; }
-        }
 
-        public interface ITalkOutlineBase
-        {
-            IReadOnlyList<ITalkChapter> TalkChapters { get; }
-        }
-    }
-
-    public abstract class TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts> : TalkSessionAbstractions
-        where TPrompt : class, IPromptForTalking<TPrompt>
-        where TReadOnlyArtifacts : class, IReadOnlyArtifacts
-        where TArtifacts : class, TReadOnlyArtifacts, IArtifacts, new()
-    {
-        public interface IReadOnlyPrerequisite
-        {
-            IReadOnlyList<TPrompt> Prompts { get; }
-            TReadOnlyArtifacts Artifacts { get; }
-        }
-
-        public interface IPrerequisite : IReadOnlyPrerequisite
-        {
-            new TArtifacts Artifacts { get; }
-
-            void SetPrompt(IReadOnlyList<TPrompt> prompts);
-        }
-
-        public interface ITestimony : ITestimonyBase
-        {
-            IReadOnlyPrerequisite Prerequisite { get; }
-
-            IReadOnlyList<ITestimonyWithChapterAndPrompt<TPrompt>> AllTestimony { get; }
-
-            IReadOnlyDictionary<
-                (ITalkChapter, TPrompt),
-                IReadOnlyList<Exception>
-            > TestimonyForEachChapterAndPrompt { get; }
-
-            IReadOnlyDictionary<
-                TPrompt,
-                IReadOnlyList<ITestimonyWithChapter>
-            > TestimonyForEachPrompt { get; }
-
-            IReadOnlyDictionary<
-                ITalkChapter,
-                IReadOnlyList<ITestimonyWithPrompt<TPrompt>>
-            > TestimonyForEachChapter { get; }
-        }
-
-        public interface ITalkOutline : ITalkOutlineBase
-        {
-            ITestimony TalkAbout();
-            Task<ITestimony> TalkAboutAsync();
-        }
 
     }
 
-    public class TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
-        : TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
-        , TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITestimony
-        , TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITalkOutline
-        where TPrompt : class, IPromptForTalking<TPrompt>
-        where TReadOnlyArtifacts : class, IReadOnlyArtifacts
-        where TArtifacts : class, IArtifacts, TReadOnlyArtifacts, new()
+    namespace Boostable.WhatTalkAbout.AssemblyLoading
     {
-        bool ITestimonyBase.IsMeaningful => IsMeaningful;
-
-        IReadOnlyPrerequisite ITestimony.Prerequisite => Prerequisite;
-
-        IReadOnlyList<Exception> ITestimonyBase.GeneralTestimony
-            => [.. GeneralTestimony];
-
-        IReadOnlyList<ITestimonyWithChapterAndPrompt<TPrompt>> ITestimony.AllTestimony
-            => [.. AllTestimony];
-
-        IReadOnlyDictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>> ITestimony.TestimonyForEachChapterAndPrompt
-            => new Dictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>>(TestimonyForEachChapterAndPrompt);
-
-        IReadOnlyDictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>> ITestimony.TestimonyForEachPrompt
-            => new Dictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>>(TestimonyForEachPrompt);
-
-        IReadOnlyDictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>> ITestimony.TestimonyForEachChapter
-            => new Dictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>>(TestimonyForEachChapter);
-
-        IReadOnlyList<ITalkChapter> ITalkOutlineBase.TalkChapters => TalkChaptersInternal.AsReadOnly();
-
-        ITestimony ITalkOutline.TalkAbout()
-            => TalkAbout();
-        Task<ITestimony> ITalkOutline.TalkAboutAsync()
-            => TalkAboutAsync();
-
-        protected class ConcretePrerequisite : IPrerequisite
+        /// <summary>
+        /// Provides abstractions for loading assemblies, including support for managing assembly lifetimes and optional
+        /// unloading capabilities.
+        /// </summary>
+        /// <remarks>This class defines a set of types and interfaces for working with assembly loading in a
+        /// flexible and extensible manner. It includes support for managing loaded assemblies, specifying load options, and
+        /// implementing custom assembly loaders. The abstractions are designed to be used in scenarios where advanced
+        /// control over assembly loading and unloading is required, such as plugin systems or dynamic code execution
+        /// environments.</remarks>
+        public abstract class AssemblyLoadingAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts> : TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
+            where TPrompt : class, IPromptForTalking<TPrompt>
+            where TReadOnlyArtifacts : class, IReadOnlyArtifacts
+            where TArtifacts : class, TReadOnlyArtifacts, IArtifacts, new ()
         {
-            public List<TPrompt>? PromptsInternal { get; set; }
-            public TArtifacts ArtifactsInternal { get; } = new();
 
-            IReadOnlyList<TPrompt> IReadOnlyPrerequisite.Prompts
-                => PromptsInternal as IReadOnlyList<TPrompt> ?? throw new InvalidOperationException("The prompts have not yet been set internally.");
+        }
 
-            TArtifacts IPrerequisite.Artifacts => ArtifactsInternal;
-
-            TReadOnlyArtifacts IReadOnlyPrerequisite.Artifacts => ArtifactsInternal;
-
-            void IPrerequisite.SetPrompt(IReadOnlyList<TPrompt> prompts)
+        public abstract class AssemblyLoadingOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
+            : TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
+            where TPrompt : class, IPromptForTalking<TPrompt>
+            where TReadOnlyArtifacts : class, IReadOnlyArtifacts
+            where TArtifacts : class, TReadOnlyArtifacts, IArtifacts, new()
+        {
+            protected internal AssemblyLoadingOutlineBase(
+                IReadOnlyList<TPrompt> prompts,
+                params ITalkChapter[] chapters
+            ) : base(prompts, [.. chapters])
             {
-                if (prompts is null) throw new ArgumentNullException(nameof(prompts));
-                if (PromptsInternal is not null && PromptsInternal.Count > 0)
-                {
-                    throw new InvalidOperationException("Prompts have already been set. Cannot set them again.");
-                }
-                PromptsInternal = prompts as List<TPrompt> ?? [.. prompts];
-            }
-        }
-        protected IPrerequisite Prerequisite { get; } = new ConcretePrerequisite();
-        protected virtual bool IsMeaningful => AllTestimony.Any();
-        private List<Exception> GeneralTestimony { get; } = [];
-        private object SyncLockGeneralTestimony { get; } = new object();
-        private List<ITestimonyWithChapterAndPrompt<TPrompt>> AllTestimony { get; } = [];
-        private object SyncLockAllTestimony { get; } = new object();
-        private Dictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>> TestimonyForEachChapterAndPrompt { get; } = new(ChapterPromptReferenceComparer.Instance);
-        private object SyncLockTestimonyForEachChapterAndPrompt { get; } = new object();
-        private Dictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>> TestimonyForEachPrompt { get; } = [];
-        private object SyncLockTestimonyForEachPrompt { get; } = new object();
-        private Dictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>> TestimonyForEachChapter { get; } = [];
-        private object SyncLockTestimonyForEachChapter { get; } = new object();
-
-        private List<ITalkChapter> TalkChaptersInternal { get; }
-
-        protected internal TalkOutlineBase(
-            IReadOnlyList<TPrompt> prompts,
-            params ITalkChapter[] chapters
-        )
-        {
-            _ = prompts ?? throw new ArgumentNullException(nameof(prompts));
-            Prerequisite.SetPrompt(prompts);
-            TalkChaptersInternal = chapters?.ToList() ?? [];
-        }
-
-        protected virtual void PrepareForTalk()
-        {
-            // This method can be overridden to prepare the talk session.
-            // For example, it can be used to arrange codes or set up the environment.
-        }
-
-        protected ITestimony TalkAbout()
-        {
-            PrepareForTalk();
-            return this;
-        }
-
-        protected virtual Task PrepareForTalkAsync()
-        {
-            // This method can be overridden to prepare the talk session asynchronously.
-            // For example, it can be used to arrange codes or set up the environment.
-            return Task.CompletedTask;
-        }
-
-        protected async Task<ITestimony> TalkAboutAsync()
-        {
-            await PrepareForTalkAsync();
-            return this;
-        }
-
-        internal void AddTestimony<TKey, TValue>(TKey key, TValue value, Dictionary<TKey, IReadOnlyList<TValue>> dictionary, object syncLock)
-        {
-            lock (syncLock)
-            {
-                if (!dictionary.TryGetValue(key, out var existing))
-                {
-                    dictionary[key] = [value];
-                    return;
-                }
-
-                if (existing is List<TValue> list)
-                {
-                    list.Add(value);
-                }
-                else
-                {
-                    var newList = new List<TValue>(existing) { value };
-                    dictionary[key] = newList;
-                }
-            }
-        }
-
-        protected virtual void AddTestimony(
-            Exception testimony,
-            ITalkChapter? chapter = null,
-            TPrompt? prompt = null
-        ) {
-            if (testimony == null) throw new ArgumentNullException(nameof(testimony));
-
-            lock (SyncLockAllTestimony)
-            {
-                AllTestimony.Add(new TestimonyWithChapterAndPrompt(chapter, prompt, testimony));
             }
 
-            if (chapter is null && prompt is null)
+            /// <summary>
+            /// Represents a loaded assembly and an optional lease for managing its lifetime.
+            /// </summary>
+            /// <remarks>If the <see cref="Lease"/> is <see langword="null"/>, the assembly cannot be
+            /// unloaded. Use the <see cref="CanUnload"/> property to determine whether the assembly supports
+            /// unloading.</remarks>
+            /// <param name="assembly"></param>
+            /// <param name="lease"></param>
+            public readonly struct LoadedAssembly(Assembly assembly, IDisposable? lease = null)
             {
-                lock (SyncLockGeneralTestimony)
-                {
-                    GeneralTestimony.Add(testimony);
-                }
-                return;
+                /// <summary>
+                /// Gets the assembly associated with the current context.
+                /// </summary>
+                public Assembly Assembly { get; } = assembly ?? throw new ArgumentNullException(nameof(assembly));
+
+                /// <summary>
+                /// Gets the lease object that manages the resource's lifetime.
+                /// </summary>
+                /// <remarks>The lease is used to control the lifetime of the associated resource.  Call
+                /// <see cref="IDisposable.Dispose"/> on the lease to release the resource when it is no longer
+                /// needed.</remarks>
+                public IDisposable? Lease { get; } = lease;
+
+                /// <summary>
+                /// Gets a value indicating whether the current instance can be unloaded.
+                /// </summary>
+                public bool CanUnload => Lease != null;
             }
 
-            if (chapter is not null && prompt is not null)
+            public sealed record class AssemblyLoadOptions
             {
-                AddTestimony(
-                    (chapter, prompt), testimony, 
-                    TestimonyForEachChapterAndPrompt, SyncLockTestimonyForEachChapterAndPrompt
-                );
+                public string? LogicalName { get; init; }
+                public bool LeaveStreamsOpen { get; init; }
+                public CancellationToken CancellationToken { get; init; } = CancellationToken.None;
+
+                public static AssemblyLoadOptions Default { get; } = new();
             }
 
-            if (prompt is not null)
+            // .NET Standard 側が依存する抽象。ホスト側が ALC 等で実装。
+            /// <summary>
+            /// Defines a mechanism for loading assemblies from streams, with optional support for unloading.
+            /// </summary>
+            /// <remarks>This interface is typically implemented by a host to provide custom assembly loading
+            /// functionality, such as using an AssemblyLoadContext (ALC). It allows loading assemblies from PE and PDB
+            /// streams and optionally supports unloading loaded assemblies.</remarks>
+            public interface IAssemblyLoader
             {
-                AddTestimony(
-                    prompt, new TestimonyWithChapter(chapter, testimony),
-                    TestimonyForEachPrompt, SyncLockTestimonyForEachPrompt
-                );
+                LoadedAssembly LoadFromStreams(Stream pe, Stream? pdb = null, AssemblyLoadOptions? options = null);
+                bool IsUnloadSupported { get; }
             }
-
-            if (chapter is not null)
-            {
-                AddTestimony(
-                    chapter, new TestimonyWithPrompt(prompt, testimony),
-                    TestimonyForEachChapter, SyncLockTestimonyForEachChapter
-                );
-            }
-        }
-
-        protected record TestimonyWithChapterAndPrompt : ITestimonyWithChapterAndPrompt<TPrompt>
-        {
-            public TestimonyWithChapterAndPrompt(ITalkChapter? chapter, TPrompt? prompt, Exception testimony)
-            {
-                Chapter = chapter;
-                Prompt = prompt;
-                Testimony = testimony;
-            }
-
-            public ITalkChapter? Chapter { get; }
-            public TPrompt? Prompt { get; }
-            public Exception Testimony { get; }
-        };
-
-
-        protected record TestimonyWithChapter : ITestimonyWithChapter
-        {
-            public TestimonyWithChapter(ITalkChapter? chapter, Exception testimony)
-            {
-                Chapter = chapter;
-                Testimony = testimony;
-            }
-
-            public ITalkChapter? Chapter { get; }
-            public Exception Testimony { get; }
-        };
-
-        protected record TestimonyWithPrompt : ITestimonyWithPrompt<TPrompt>
-        {
-            public TestimonyWithPrompt(TPrompt? prompt, Exception testimony)
-            {
-                Prompt = prompt;
-                Testimony = testimony;
-            }
-
-            public TPrompt? Prompt { get; }
-            public Exception Testimony { get; }
-        };
-
-        protected sealed class ChapterPromptReferenceComparer
-            : IEqualityComparer<(ITalkChapter, TPrompt)>
-        {
-            public static ChapterPromptReferenceComparer Instance { get; } = new();
-
-            private ChapterPromptReferenceComparer() { }
-
-            public bool Equals((ITalkChapter, TPrompt) x, (ITalkChapter, TPrompt) y)
-            {
-                return ReferenceEquals(x.Item1, y.Item1)
-                    && ReferenceEquals(x.Item2, y.Item2);
-            }
-
-            public int GetHashCode((ITalkChapter, TPrompt) obj)
-            {
-                // Create a hash code based on the references of the chapter and prompt.
-                int h1 = obj.Item1 is null ? 0 : RuntimeHelpers.GetHashCode(obj.Item1);
-                int h2 = obj.Item2 is null ? 0 : RuntimeHelpers.GetHashCode(obj.Item2);
-                return ((h1 << 5) | (h1 >> 27)) ^ h2;
-            }
-        }
-
-        protected class TalkChapter(string name) : ITalkChapter
-        {
-            public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
-
-            public override string ToString()
-            {
-                return Name;
-            }
-        }
-    }
-
-    public abstract class TalkSessionBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
-        : TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
-        where TPrompt : class, IPromptForTalking<TPrompt>
-        where TReadOnlyArtifacts : class, IReadOnlyArtifacts
-        where TArtifacts : class, TReadOnlyArtifacts, IArtifacts, new()
-    {
-        protected ITalkOutline Outline { get; }
-
-        private int _hasRun = 0;
-
-        public TalkSessionBase(
-            TPrompt basePrompt,
-            Func<TPrompt, IReadOnlyList<TPrompt>>? promptVariationBuilder = null,
-            Func<IReadOnlyList<TPrompt>, ITalkOutline>? outlineFactory = null
-        )
-        {
-            promptVariationBuilder ??= basePrompt => DefaultVariationBuilder(basePrompt);
-            var prompts = promptVariationBuilder(basePrompt);
-            outlineFactory ??= DefaultOutlineFactory; // // Allow the factory to be overridden, e.g. for outline injection or behavior customization.
-            Outline = outlineFactory(prompts);
-        }
-
-        protected internal void EnsureNotYetHasRun()
-        {
-            if (Interlocked.CompareExchange(ref _hasRun, 1, 0) != 0)
-            {
-                throw new InvalidOperationException("This session has already been run. Let it run only once per session.");
-            }
-        }
-
-        public virtual ITestimony TalkAbout()
-        {
-            return Outline.TalkAbout();
-        }
-
-        public virtual Task<ITestimony> TalkAboutAsync()
-        {
-            return Task.FromResult(Outline.TalkAbout());
-        }
-
-        protected internal virtual IReadOnlyList<TPrompt> DefaultVariationBuilder(TPrompt basePrompt)
-        {
-            // Default implementation that returns the base prompt as the only variation.
-            return [basePrompt.Clone("Default Prompt (without promptVariationBuilder)")];
-        }
-
-        protected internal virtual TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITalkOutline DefaultOutlineFactory(
-            IReadOnlyList<TPrompt> prompts
-        ) {
-            // Default implementation that creates a simple outline with the provided arrange code and prompts.
-            return new TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>(prompts);
         }
     }
 }
@@ -484,24 +116,17 @@ namespace Boostable.WhatTalkAbout.Base
  ****************/
 namespace Boostable.WhatRoslynTalkAbout.ArrangeCodes
 {
-
     using Boostable.WhatTalkAbout.Abstractions;
-    using Boostable.WhatTalkAbout.Base;
+    using Boostable.WhatTalkAbout.Base.Boostable.WhatTalkAbout.AssemblyLoading;
     using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
     public readonly record struct VirtualSource
-
     {
-        public string Path { get; }
-        public string Code { get; }
-        public VirtualSource(string path, string code)
-        {
-            Path = path ?? throw new ArgumentNullException(nameof(path));
-            Code = code ?? throw new ArgumentNullException(nameof(code));
-        }
+        public required string Path { get; init; }
+        public required string Code { get; init; }
     }
 
     public interface IArrangeCodesPromptForTalking<out TSelf> : IPromptForTalking<TSelf>
@@ -520,7 +145,7 @@ namespace Boostable.WhatRoslynTalkAbout.ArrangeCodes
     }
 
     public class ArrangeCodesTalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
-        : TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
+        : AssemblyLoadingOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
         where TPrompt : class, IArrangeCodesPromptForTalking<TPrompt>
         where TReadOnlyArtifacts : class, IReadOnlyArrangeCodesArtifacts
         where TArtifacts : class, TReadOnlyArtifacts, IArrangeCodesArtifacts, IArtifacts, new()
@@ -581,21 +206,21 @@ namespace Boostable.WhatRoslynTalkAbout.ArrangeCodes
  * ParseCodes
  ************/
 namespace Boostable.WhatRoslynTalkAbout.ParseCodes
-{
-    using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
+    {
+        using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
     using Boostable.WhatTalkAbout.Abstractions;
     using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.Text;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
+        using Microsoft.CodeAnalysis.CSharp;
+        using Microsoft.CodeAnalysis.Text;
+        using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading;
+        using System.Threading.Tasks;
 
-    // Prompt: Arrange を継承して、Parseに必要なオプションだけ足す
-    public interface IParseCodesPromptForTalking<out TSelf> : IArrangeCodesPromptForTalking<TSelf>
+        // Prompt: Arrange を継承して、Parseに必要なオプションだけ足す
+        public interface IParseCodesPromptForTalking<out TSelf> : IArrangeCodesPromptForTalking<TSelf>
         where TSelf : class, IParseCodesPromptForTalking<TSelf>
     {
         CSharpParseOptions ParseOptions { get; }
@@ -697,21 +322,21 @@ namespace Boostable.WhatRoslynTalkAbout.ParseCodes
  * CompileSyntaxTrees  *
  ***********************/
 namespace Boostable.WhatRoslynTalkAbout.CompileSyntaxTrees
-{
-    using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
-    using Boostable.WhatRoslynTalkAbout.ParseCodes;
+    {
+        using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
+        using Boostable.WhatRoslynTalkAbout.ParseCodes;
     using Boostable.WhatTalkAbout.Abstractions;
     using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
+        using Microsoft.CodeAnalysis.CSharp;
+        using System;
+        using System.Collections.Generic;
+        using System.IO;
+        using System.Linq;
+        using System.Threading;
+        using System.Threading.Tasks;
 
-    // Prompt: 参照を持たせ、AppDomain マージの可否を切替
-    public interface ICompileSyntaxTreesPromptForTalking<out TSelf> : IParseCodesPromptForTalking<TSelf>
+        // Prompt: 参照を持たせ、AppDomain マージの可否を切替
+        public interface ICompileSyntaxTreesPromptForTalking<out TSelf> : IParseCodesPromptForTalking<TSelf>
         where TSelf : class, ICompileSyntaxTreesPromptForTalking<TSelf>
     {
         /// <summary>明示的に与える参照</summary>
@@ -891,21 +516,21 @@ namespace Boostable.WhatRoslynTalkAbout.CompileSyntaxTrees
  * EmitCompilations   *
  **********************/
 namespace Boostable.WhatRoslynTalkAbout.EmitCompilations
-{
-    using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
-    using Boostable.WhatRoslynTalkAbout.CompileSyntaxTrees;
+    {
+        using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
+        using Boostable.WhatRoslynTalkAbout.CompileSyntaxTrees;
     using Boostable.WhatTalkAbout.Abstractions;
     using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.Emit;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
+        using Microsoft.CodeAnalysis.Emit;
+        using System;
+        using System.Collections.Generic;
+        using System.IO;
+        using System.Linq;
+        using System.Threading;
+        using System.Threading.Tasks;
 
-    // Prompt: 何をどう吐くかのポリシーを持たせる
-    public interface IEmitCompilationsPromptForTalking<out TSelf> : ICompileSyntaxTreesPromptForTalking<TSelf>
+        // Prompt: 何をどう吐くかのポリシーを持たせる
+        public interface IEmitCompilationsPromptForTalking<out TSelf> : ICompileSyntaxTreesPromptForTalking<TSelf>
         where TSelf : class, IEmitCompilationsPromptForTalking<TSelf>
     {
         /// <summary>PE と一緒に PDB も出すか</summary>
@@ -1024,25 +649,25 @@ namespace Boostable.WhatRoslynTalkAbout.EmitCompilations
  * AnalyzeIL    *
  ****************/
 namespace Boostable.WhatRoslynTalkAbout.AnalyzeIL
-{
-    using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
-    using Boostable.WhatRoslynTalkAbout.EmitCompilations;
+    {
+        using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
+        using Boostable.WhatRoslynTalkAbout.EmitCompilations;
     using Boostable.WhatTalkAbout.Abstractions;
     using Microsoft.CodeAnalysis;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Reflection;
-    using System.Threading;
-    using System.Threading.Tasks;
+        using System;
+        using System.Collections.Generic;
+        using System.IO;
+        using System.Linq;
+        using System.Reflection;
+        using System.Threading;
+        using System.Threading.Tasks;
 
-    // =======================
-    // Prompt / Artifacts
-    // =======================
+        // =======================
+        // Prompt / Artifacts
+        // =======================
 
-    // Prompt: 何を測るかのスイッチ（最低限）
-    public interface IAnalyzeILPromptForTalking<out TSelf> : IEmitCompilationsPromptForTalking<TSelf>
+        // Prompt: 何を測るかのスイッチ（最低限）
+        public interface IAnalyzeILPromptForTalking<out TSelf> : IEmitCompilationsPromptForTalking<TSelf>
         where TSelf : class, IAnalyzeILPromptForTalking<TSelf>
     {
         bool CollectTypeCounts { get; }          // 型/メソッド数などざっくり
@@ -1100,19 +725,20 @@ namespace Boostable.WhatRoslynTalkAbout.AnalyzeIL
                     ["AssemblyName"] = Prerequisite.Artifacts.AssemblyName ?? "(unknown)"
                 };
 
-                using var peStream = new MemoryStream(pe.ToArray());
+                using var peStream = new MemoryStream([.. pe]);
                 using var pdbStream = Prerequisite.Artifacts.PdbImage is { } pdbBytes
-                    ? new MemoryStream(pdbBytes.ToArray())
+                    ? new MemoryStream([.. pdbBytes])
                     : null;
 
                 // ざっくり反射ベースの軽量解析（生ILでなくてもまずはOK）
                 if (prompt.CollectTypeCounts || prompt.CollectAssemblyIdentity)
                 {
-                    var options = new AssemblyLoadOptions(
-                        logicalName: CurrentTalkChapter.Name.Replace(' ', '_'),
-                        leaveStreamsOpen: false,
-                        cancellationToken: prompt.CancellationToken
-                    );
+                    var options = new AssemblyLoadOptions
+                    {
+                        LogicalName = CurrentTalkChapter.Name.Replace(' ', '_'),
+                        LeaveStreamsOpen = false,
+                        CancellationToken = prompt.CancellationToken
+                    };
 
                     var loaded = AssemblyLoader.LoadFromStreams(peStream, pdbStream, options);
 
@@ -1190,22 +816,22 @@ namespace Boostable.WhatRoslynTalkAbout.AnalyzeIL
  * Execute      *
  ****************/
 namespace Boostable.WhatRoslynTalkAbout.ExecuteAssemblies
-{
-    using Boostable.WhatRoslynTalkAbout.AnalyzeIL;
-    using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
+    {
+        using Boostable.WhatRoslynTalkAbout.AnalyzeIL;
+        using Boostable.WhatRoslynTalkAbout.ArrangeCodes;
     using Boostable.WhatTalkAbout.Abstractions;
     using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Reflection;
-    using System.Threading;
-    using System.Threading.Tasks;
+        using Microsoft.CodeAnalysis.CSharp;
+        using System;
+        using System.Collections.Generic;
+        using System.IO;
+        using System.Linq;
+        using System.Reflection;
+        using System.Threading;
+        using System.Threading.Tasks;
 
-    // Prompt: 実行ポリシー（stdout 関連は削除）
-    public interface IExecuteAssembliesPromptForTalking<out TSelf> : IAnalyzeILPromptForTalking<TSelf>
+        // Prompt: 実行ポリシー（stdout 関連は削除）
+        public interface IExecuteAssembliesPromptForTalking<out TSelf> : IAnalyzeILPromptForTalking<TSelf>
         where TSelf : class, IExecuteAssembliesPromptForTalking<TSelf>
     {
         /// <summary>EntryPoint の明示名（null なら Assembly.EntryPoint を使用）</summary>
@@ -1247,7 +873,7 @@ namespace Boostable.WhatRoslynTalkAbout.ExecuteAssemblies
             var entry = ResolveEntryPoint(asm, prompt)
                 ?? throw new MissingMethodException("EntryPoint not found.");
 
-            var args = (prompt.Args?.ToArray()) ?? Array.Empty<string>();
+            var args = (prompt.Args?.ToArray()) ?? [];
             return await InvokeEntryPoint(entry, args, ct).ConfigureAwait(false);
         }
 
@@ -1266,9 +892,9 @@ namespace Boostable.WhatRoslynTalkAbout.ExecuteAssemblies
         {
             var ps = entry.GetParameters();
             object?[] callArgs =
-                ps.Length == 0 ? Array.Empty<object?>()
+                ps.Length == 0 ? []
               : ps.Length == 1 && ps[0].ParameterType == typeof(string[])
-                ? new object?[] { args }
+                ? [args]
                 : throw new NotSupportedException($"Unsupported entry point signature: {entry}");
 
             var ret = entry.Invoke(null, callArgs);
@@ -1320,16 +946,16 @@ namespace Boostable.WhatRoslynTalkAbout.ExecuteAssemblies
 
                 prompt.CancellationToken.ThrowIfCancellationRequested();
 
-                using var peStream = new MemoryStream(pe.ToArray());
+                using var peStream = new MemoryStream([.. pe]);
                 using var pdbStream = Prerequisite.Artifacts.PdbImage is { } pdb
-                    ? new MemoryStream(pdb.ToArray())
+                    ? new MemoryStream([.. pdb])
                     : null;
 
-                var options = new AssemblyLoadOptions(
-                    logicalName: CurrentTalkChapter.Name.Replace(' ', '_'),
-                    leaveStreamsOpen: false,
-                    cancellationToken: prompt.CancellationToken
-                );
+                var options = new AssemblyLoadOptions {
+                    LogicalName = CurrentTalkChapter.Name.Replace(' ', '_'),
+                    LeaveStreamsOpen = false,
+                    CancellationToken = prompt.CancellationToken
+                };
 
                 var loaded = AssemblyLoader.LoadFromStreams(peStream, pdbStream, options);
 
