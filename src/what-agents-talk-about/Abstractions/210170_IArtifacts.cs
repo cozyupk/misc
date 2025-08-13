@@ -1,4 +1,4 @@
-﻿namespace Boostable.WhatTalkAbout.Abstractions
+﻿namespace Boostable.WhatAgentsTalkAbout.Abstractions
 {
     /// <summary>
     /// 

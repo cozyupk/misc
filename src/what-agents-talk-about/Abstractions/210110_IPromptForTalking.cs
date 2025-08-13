@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace Boostable.WhatTalkAbout.Abstractions
+namespace Boostable.WhatAgentsTalkAbout.Abstractions
 {
     /// <summary>
     /// Represents a marker interface for prompts used in conversational contexts.

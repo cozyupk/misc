@@ -6,12 +6,8 @@
 		<langVersion>12.0</langVersion>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<RootNamespace>Boostable.WhatTalkAbout.Core</RootNamespace>
-		<AssemblyName>Boostable.WhatTalkAbout.Core</AssemblyName>
+		<RootNamespace>Boostable.WhatAgentsTalkAbout.Abstractions</RootNamespace>
+		<AssemblyName>Boostable.WhatAgentsTalkAbout.Abstractions</AssemblyName>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\Abstractions\210100_Abstractions.csproj" />
-	</ItemGroup>
 
 </Project>

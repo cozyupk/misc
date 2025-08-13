@@ -1,4 +1,4 @@
-﻿using Boostable.WhatTalkAbout.Abstractions;
+﻿using Boostable.WhatAgentsTalkAbout.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Boostable.WhatTalkAbout.Core
+namespace Boostable.WhatAgentsTalkAbout.Core
 {
     /// <summary>
     /// Provides a base implementation for managing and organizing a structured outline of a "talk" session,  including
@@ -22,14 +22,36 @@ namespace Boostable.WhatTalkAbout.Core
     /// cref="IReadOnlyArtifacts"/>.</typeparam>
     /// <typeparam name="TArtifacts">The type of the artifacts associated with the talk session. Must implement <see cref="IArtifacts"/> and 
     /// <typeparamref name="TReadOnlyArtifacts"/>, and must have a parameterless constructor.</typeparam>
-    public class TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
+    public abstract class TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
         : TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
         , TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITestimonySummary
         , TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITalkOutline
         where TPrompt : class, IPromptForTalking<TPrompt>
         where TReadOnlyArtifacts : class, IReadOnlyArtifacts
-        where TArtifacts : class, IArtifacts, TReadOnlyArtifacts, new()
+        where TArtifacts : class, IArtifacts, TReadOnlyArtifacts
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TalkOutlineBase"/> class with the specified prompts, talk
+        /// domain factory, and chapters.
+        /// </summary>
+        /// <param name="prompts">A read-only list of prompts to be used as prerequisites. This parameter cannot be <see langword="null"/>.</param>
+        /// <param name="talkDomainFactory">The factory responsible for creating talk domain objects. This parameter cannot be <see langword="null"/>.</param>
+        /// <param name="chapters">An optional array of talk chapters to include in the outline. If no chapters are provided, an empty
+        /// collection is used.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="prompts"/> or <paramref name="talkDomainFactory"/> is <see langword="null"/>.</exception>
+        protected internal TalkOutlineBase(
+            IReadOnlyList<TPrompt> prompts,
+            ITalkDomainFactory talkDomainFactory,
+            params ITalkChapter[] chapters
+        )
+        {
+            _ = prompts ?? throw new ArgumentNullException(nameof(prompts));
+            Prerequisite = new ConcretePrerequisite(prompts, talkDomainFactory.CreateArtifacts());
+            TalkChaptersInternal = chapters?.ToList() ?? [];
+            TalkDomainFactory = talkDomainFactory ?? throw new ArgumentNullException(nameof(talkDomainFactory));
+            CacheTalkChapters = new ReadOnlyCollection<ITalkChapter>(TalkChaptersInternal);
+        }
+
         /// <summary>
         /// Gets a value indicating whether the testimony is meaningful.
         /// </summary>
@@ -39,104 +61,6 @@ namespace Boostable.WhatTalkAbout.Core
         /// Gets the prerequisite associated with the testimony.
         /// </summary>
         IReadOnlyPrerequisite ITestimonySummary.Prerequisite => Prerequisite;
-
-        // ===== Snapshot Cache =====
-
-        /// <summary>
-        /// Represents a cached collection of general testimony exceptions.
-        /// </summary>
-        /// <remarks>This property holds a read-only list of exceptions that may be used for caching
-        /// purposes. The value can be null if no exceptions are currently cached.</remarks>
-        private IReadOnlyList<Exception>? CacheGeneralTestimony { get; set; }
-
-        /// <summary>
-        /// Represents a cached collection of testimony objects, each associated with a chapter and a prompt.
-        /// </summary>
-        /// <remarks>This field is intended to store a read-only list of testimony objects for efficient
-        /// reuse.  The value may be <see langword="null"/> if the cache has not been initialized or
-        /// populated.</remarks>
-        private IReadOnlyList<ITestimonyWithChapterAndPrompt<TPrompt>>? CacheAllTestimony { get; set; }
-
-        /// <summary>
-        /// Represents a cache that maps a combination of a chapter and a prompt to a list of exceptions.
-        /// </summary>
-        /// <remarks>This dictionary is intended to store precomputed or cached data for each chapter and
-        /// prompt pair, where the key is a tuple consisting of an <see cref="ITalkChapter"/> and a <typeparamref
-        /// name="TPrompt"/>, and the value is a read-only list of exceptions associated with that pair.</remarks>
-        private IReadOnlyDictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>>? CacheTestimonyForEachChapterAndPrompt { get; set; }
-
-        /// <summary>
-        /// Represents a cached mapping of prompts to their associated testimonies with chapters.
-        /// </summary>
-        /// <remarks>This dictionary provides a read-only view of the cached data, where each key is a
-        /// prompt and the corresponding value is a read-only list of testimonies associated with that prompt. The cache
-        /// may be null if no data has been initialized or stored.</remarks>
-        private IReadOnlyDictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>>? CacheTestimonyForEachPrompt { get; set; }
-
-        /// <summary>
-        /// Represents a cached mapping of chapters to their associated testimonies with prompts.
-        /// </summary>
-        /// <remarks>The dictionary keys represent chapters, while the values are read-only lists of
-        /// testimonies associated with each chapter. This cache may be null if no data has been initialized or
-        /// loaded.</remarks>
-        private IReadOnlyDictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>>? CacheTestimonyForEachChapter { get; set; }
-
-        /// <summary>
-        /// Represents a cached collection of talk chapters.
-        /// </summary>
-        /// <remarks>This field is used to store a read-only list of talk chapters, which may be null if
-        /// the cache has not been initialized.</remarks>
-        private IReadOnlyList<ITalkChapter>? CacheTalkChapters { get; set; }
-
-        /// <summary>
-        /// Invalidates all cached testimony data, resetting the caches to their initial state.
-        /// </summary>
-        /// <remarks>This method clears various internal caches related to testimony data.  It should be
-        /// called when the cached data becomes outdated or needs to be refreshed.</remarks>
-        private void InvalidateCaches()
-        {
-            // Keep the chapter list cache as it is assumed to be fixed.
-            CacheGeneralTestimony = null;
-            CacheAllTestimony = null;
-            CacheTestimonyForEachChapterAndPrompt = null;
-            CacheTestimonyForEachPrompt = null;
-            CacheTestimonyForEachChapter = null;
-        }
-
-        /// <summary>
-        /// Creates a snapshot of the specified read-only list.
-        /// </summary>
-        /// <typeparam name="T">The type of elements in the list.</typeparam>
-        /// <param name="source">The source list to create a snapshot from. Must not be <see langword="null"/>.</param>
-        /// <returns>A new read-only list containing the elements of the source list at the time of the call. Changes to the
-        /// original list after the snapshot is created will not affect the returned list.</returns>
-        private static IReadOnlyList<T> SnapshotList<T>(IReadOnlyList<T> source)
-            => source is List<T> list ? new List<T>(list)
-                                      : new List<T>(source);
-
-        /// <summary>
-        /// Creates a deep snapshot of a dictionary where the values are read-only lists.
-        /// </summary>
-        /// <remarks>This method creates a deep copy of the dictionary and its lists, ensuring that
-        /// modifications to the returned dictionary or its lists do not affect the original dictionary or its
-        /// lists.</remarks>
-        /// <typeparam name="TKey">The type of the keys in the dictionary. Must be non-nullable.</typeparam>
-        /// <typeparam name="TVal">The type of the elements in the lists that are the values of the dictionary.</typeparam>
-        /// <param name="source">The source dictionary to snapshot. Cannot be null.</param>
-        /// <returns>A new dictionary containing the same keys as the source dictionary, where each value is a new list
-        /// containing the elements of the corresponding list in the source dictionary.</returns>
-        private static IReadOnlyDictionary<TKey, IReadOnlyList<TVal>> SnapshotDictOfList<TKey, TVal>(
-            Dictionary<TKey, IReadOnlyList<TVal>> source)
-            where TKey : notnull
-        {
-            var copy = new Dictionary<TKey, IReadOnlyList<TVal>>(source.Count, source.Comparer);
-            foreach (var kv in source)
-            {
-                var v = kv.Value is List<TVal> l ? new List<TVal>(l) : new List<TVal>(kv.Value);
-                copy[kv.Key] = v;
-            }
-            return copy;
-        }
 
         /// <summary>
         /// Gets a read-only list of exceptions representing the general testimony.
@@ -248,14 +172,12 @@ namespace Boostable.WhatTalkAbout.Core
         /// <remarks>This class is intended for internal use and provides the necessary functionality  to
         /// manage prompts and artifacts as part of the prerequisite system. It enforces  constraints such as ensuring
         /// prompts are set only once and provides access to  artifacts in both mutable and immutable forms.</remarks>
-        protected class ConcretePrerequisite : IPrerequisite
+        protected class ConcretePrerequisite(IReadOnlyList<TPrompt> prompts, TArtifacts artifactsInternal) : IPrerequisite
         {
             /// <summary>
-            /// Gets or sets the internal collection of prompts.
+            /// Gets the collection of prompts used internally by the system.
             /// </summary>
-            /// <remarks>This property is intended for internal use and may not be suitable for direct
-            /// access in external code.</remarks>
-            public List<TPrompt>? PromptsInternal { get; set; }
+            public IReadOnlyList<TPrompt> Prompts { get; } = prompts ?? throw new ArgumentNullException(nameof(prompts));
 
             /// <summary>
             /// Gets the internal collection of artifacts.
@@ -263,57 +185,39 @@ namespace Boostable.WhatTalkAbout.Core
             /// <remarks>This property is intended for internal use only and provides access to the
             /// underlying collection of artifacts. It is not recommended for external consumers to rely on this
             /// property.</remarks>
-            public TArtifacts ArtifactsInternal { get; } = new();
+            public TArtifacts Artifacts { get; } = artifactsInternal ?? throw new ArgumentNullException(nameof(artifactsInternal));
 
             /// <summary>
             /// Gets the collection of prompts associated with the prerequisite.
             /// </summary>
             IReadOnlyList<TPrompt> IReadOnlyPrerequisite.Prompts
-                => PromptsInternal as IReadOnlyList<TPrompt> ?? throw new InvalidOperationException("The prompts have not yet been set internally.");
+                => Prompts ?? throw new InvalidOperationException("The prompts have not yet been set internally.");
 
             /// <summary>
             /// Gets the collection of artifacts associated with the prerequisite.
             /// </summary>
-            TArtifacts IPrerequisite.Artifacts => ArtifactsInternal;
+            TArtifacts IPrerequisite.Artifacts => Artifacts;
 
             /// <summary>
             /// Gets the collection of artifacts associated with the prerequisite.
             /// </summary>
-            TReadOnlyArtifacts IReadOnlyPrerequisite.Artifacts => ArtifactsInternal;
-
-            /// <summary>
-            /// Sets the prompt collection used by the session (may be set exactly once).
-            /// </summary>
-            /// <param name="prompts">Prompts to use. Must not be null.</param>
-            /// <exception cref="ArgumentNullException"><paramref name="prompts"/> is null.</exception>
-            /// <exception cref="InvalidOperationException">Already set once.</exception>
-            /// <remarks>
-            /// Ownership: the sequence may be copied into an internal <c>List&lt;TPrompt&gt;</c>.
-            /// Modifying <paramref name="prompts"/> after this call does not affect this instance.
-            /// </remarks>
-            void IPrerequisite.SetPrompt(IReadOnlyList<TPrompt> prompts)
-            {
-                if (prompts is null) throw new ArgumentNullException(nameof(prompts));
-                if (PromptsInternal is not null && PromptsInternal.Count > 0)
-                    throw new InvalidOperationException("Prompts have already been set. Cannot set them again.");
-                PromptsInternal = prompts as List<TPrompt> ?? [.. prompts];
-            }
+            TReadOnlyArtifacts IReadOnlyPrerequisite.Artifacts => Artifacts;
         }
 
         /// <summary>
         /// Gets the prerequisite required for the operation.
         /// </summary>
-        protected IPrerequisite Prerequisite { get; } = new ConcretePrerequisite();
+        protected ConcretePrerequisite Prerequisite { get; }
 
         // ===== Thread-safe IsMeaningful (atomic counter) =====
 
         /// <summary>
         /// Represents the total count of all testimonies processed.
         /// </summary>
-        /// <remarks>This field is incremented atomically using <see cref="System.Threading.Interlocked"/>
-        /// to ensure thread safety. Reads are performed using <see cref="System.Threading.Volatile.Read"/> to guarantee
+        /// <remarks>This field is incremented atomically using <see cref="Interlocked"/>
+        /// to ensure thread safety. Reads are performed using <see cref="Volatile.Read"/> to guarantee
         /// visibility across threads.</remarks>
-        private int _allTestimonyCount; // Interlocked で増分、読み取りは Volatile.Read
+        private int _allTestimonyCount; // use Interlocked.Increment to increment, volatile.Read to read
 
         /// <summary>
         /// Gets a value indicating whether the current state is considered meaningful.
@@ -389,28 +293,6 @@ namespace Boostable.WhatTalkAbout.Core
         private ITalkDomainFactory TalkDomainFactory { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TalkOutlineBase"/> class with the specified prompts, talk
-        /// domain factory, and chapters.
-        /// </summary>
-        /// <param name="prompts">A read-only list of prompts to be used as prerequisites. This parameter cannot be <see langword="null"/>.</param>
-        /// <param name="talkDomainFactory">The factory responsible for creating talk domain objects. This parameter cannot be <see langword="null"/>.</param>
-        /// <param name="chapters">An optional array of talk chapters to include in the outline. If no chapters are provided, an empty
-        /// collection is used.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="prompts"/> or <paramref name="talkDomainFactory"/> is <see langword="null"/>.</exception>
-        protected internal TalkOutlineBase(
-            IReadOnlyList<TPrompt> prompts,
-            ITalkDomainFactory talkDomainFactory,
-            params ITalkChapter[] chapters
-        )
-        {
-            _ = prompts ?? throw new ArgumentNullException(nameof(prompts));
-            Prerequisite.SetPrompt(prompts);
-            TalkChaptersInternal = chapters?.ToList() ?? [];
-            TalkDomainFactory = talkDomainFactory ?? throw new ArgumentNullException(nameof(talkDomainFactory));
-            CacheTalkChapters = new ReadOnlyCollection<ITalkChapter>(TalkChaptersInternal);
-        }
-
-        /// <summary>
         /// Extension point to implement the session's synchronous preparation/execution logic.
         /// </summary>
         /// <remarks>
@@ -442,7 +324,7 @@ namespace Boostable.WhatTalkAbout.Core
         /// The base implementation completes immediately. Even if you currently implement only the synchronous path,
         /// prefer implementing this method to ease future migration.
         /// </remarks>
-        protected virtual Task PrepareForTalkAsync() => Task.CompletedTask;
+        protected abstract Task PrepareForTalkAsync();
 
         /// <summary>
         /// Prepares for and initiates a talk asynchronously, returning the current testimony instance.
@@ -517,7 +399,7 @@ namespace Boostable.WhatTalkAbout.Core
             // Add to AllTestimony (1 item = 1 count)
             lock (SyncLockAllTestimony)
             {
-                AllTestimony.Add(TalkDomainFactory.Create(chapter, prompt, testimony));
+                AllTestimony.Add(TalkDomainFactory.CreateTestimony(chapter, prompt, testimony));
                 Interlocked.Increment(ref _allTestimonyCount); // Increment the count atomically
             }
 
@@ -537,11 +419,11 @@ namespace Boostable.WhatTalkAbout.Core
             }
             if (prompt is not null)
             {
-                AddTestimony(prompt, TalkDomainFactory.Create(chapter, testimony), TestimonyForEachPrompt, SyncLockTestimonyForEachPrompt);
+                AddTestimony(prompt, TalkDomainFactory.CreateTestimony(chapter, testimony), TestimonyForEachPrompt, SyncLockTestimonyForEachPrompt);
             }
             if (chapter is not null)
             {
-                AddTestimony(chapter, TalkDomainFactory.Create(prompt, testimony), TestimonyForEachChapter, SyncLockTestimonyForEachChapter);
+                AddTestimony(chapter, TalkDomainFactory.CreateTestimony(prompt, testimony), TestimonyForEachChapter, SyncLockTestimonyForEachChapter);
             }
 
             InvalidateCaches(); // Invalidate all caches after adding testimony
@@ -570,7 +452,7 @@ namespace Boostable.WhatTalkAbout.Core
             {
                 int h1 = obj.Item1 is null ? 0 : RuntimeHelpers.GetHashCode(obj.Item1);
                 int h2 = obj.Item2 is null ? 0 : RuntimeHelpers.GetHashCode(obj.Item2);
-                return ((h1 << 5) | (h1 >> 27)) ^ h2;
+                return (h1 << 5 | h1 >> 27) ^ h2;
             }
         }
 
@@ -584,6 +466,105 @@ namespace Boostable.WhatTalkAbout.Core
         {
             public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
             public override string ToString() => Name;
+        }
+
+
+        // ===== Snapshot Cache =====
+
+        /// <summary>
+        /// Represents a cached collection of general testimony exceptions.
+        /// </summary>
+        /// <remarks>This property holds a read-only list of exceptions that may be used for caching
+        /// purposes. The value can be null if no exceptions are currently cached.</remarks>
+        private IReadOnlyList<Exception>? CacheGeneralTestimony { get; set; }
+
+        /// <summary>
+        /// Represents a cached collection of testimony objects, each associated with a chapter and a prompt.
+        /// </summary>
+        /// <remarks>This field is intended to store a read-only list of testimony objects for efficient
+        /// reuse.  The value may be <see langword="null"/> if the cache has not been initialized or
+        /// populated.</remarks>
+        private IReadOnlyList<ITestimonyWithChapterAndPrompt<TPrompt>>? CacheAllTestimony { get; set; }
+
+        /// <summary>
+        /// Represents a cache that maps a combination of a chapter and a prompt to a list of exceptions.
+        /// </summary>
+        /// <remarks>This dictionary is intended to store precomputed or cached data for each chapter and
+        /// prompt pair, where the key is a tuple consisting of an <see cref="ITalkChapter"/> and a <typeparamref
+        /// name="TPrompt"/>, and the value is a read-only list of exceptions associated with that pair.</remarks>
+        private IReadOnlyDictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>>? CacheTestimonyForEachChapterAndPrompt { get; set; }
+
+        /// <summary>
+        /// Represents a cached mapping of prompts to their associated testimonies with chapters.
+        /// </summary>
+        /// <remarks>This dictionary provides a read-only view of the cached data, where each key is a
+        /// prompt and the corresponding value is a read-only list of testimonies associated with that prompt. The cache
+        /// may be null if no data has been initialized or stored.</remarks>
+        private IReadOnlyDictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>>? CacheTestimonyForEachPrompt { get; set; }
+
+        /// <summary>
+        /// Represents a cached mapping of chapters to their associated testimonies with prompts.
+        /// </summary>
+        /// <remarks>The dictionary keys represent chapters, while the values are read-only lists of
+        /// testimonies associated with each chapter. This cache may be null if no data has been initialized or
+        /// loaded.</remarks>
+        private IReadOnlyDictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>>? CacheTestimonyForEachChapter { get; set; }
+
+        /// <summary>
+        /// Represents a cached collection of talk chapters.
+        /// </summary>
+        /// <remarks>This field is used to store a read-only list of talk chapters, which may be null if
+        /// the cache has not been initialized.</remarks>
+        private IReadOnlyList<ITalkChapter>? CacheTalkChapters { get; set; }
+
+        /// <summary>
+        /// Invalidates all cached testimony data, resetting the caches to their initial state.
+        /// </summary>
+        /// <remarks>This method clears various internal caches related to testimony data.  It should be
+        /// called when the cached data becomes outdated or needs to be refreshed.</remarks>
+        private void InvalidateCaches()
+        {
+            // Keep the chapter list cache as it is assumed to be fixed.
+            CacheGeneralTestimony = null;
+            CacheAllTestimony = null;
+            CacheTestimonyForEachChapterAndPrompt = null;
+            CacheTestimonyForEachPrompt = null;
+            CacheTestimonyForEachChapter = null;
+        }
+
+        /// <summary>
+        /// Creates a snapshot of the specified read-only list.
+        /// </summary>
+        /// <typeparam name="T">The type of elements in the list.</typeparam>
+        /// <param name="source">The source list to create a snapshot from. Must not be <see langword="null"/>.</param>
+        /// <returns>A new read-only list containing the elements of the source list at the time of the call. Changes to the
+        /// original list after the snapshot is created will not affect the returned list.</returns>
+        private static IReadOnlyList<T> SnapshotList<T>(IReadOnlyList<T> source)
+            => source is List<T> list ? [.. list]
+                                      : [.. source];
+
+        /// <summary>
+        /// Creates a deep snapshot of a dictionary where the values are read-only lists.
+        /// </summary>
+        /// <remarks>This method creates a deep copy of the dictionary and its lists, ensuring that
+        /// modifications to the returned dictionary or its lists do not affect the original dictionary or its
+        /// lists.</remarks>
+        /// <typeparam name="TKey">The type of the keys in the dictionary. Must be non-nullable.</typeparam>
+        /// <typeparam name="TVal">The type of the elements in the lists that are the values of the dictionary.</typeparam>
+        /// <param name="source">The source dictionary to snapshot. Cannot be null.</param>
+        /// <returns>A new dictionary containing the same keys as the source dictionary, where each value is a new list
+        /// containing the elements of the corresponding list in the source dictionary.</returns>
+        private static IReadOnlyDictionary<TKey, IReadOnlyList<TVal>> SnapshotDictOfList<TKey, TVal>(
+            Dictionary<TKey, IReadOnlyList<TVal>> source)
+            where TKey : notnull
+        {
+            var copy = new Dictionary<TKey, IReadOnlyList<TVal>>(source.Count, source.Comparer);
+            foreach (var kv in source)
+            {
+                var v = kv.Value is List<TVal> l ? [.. l] : new List<TVal>(kv.Value);
+                copy[kv.Key] = v;
+            }
+            return copy;
         }
     }
 }

@@ -1,21 +1,16 @@
 ﻿using System;
 
-namespace Boostable.WhatTalkAbout.Abstractions
+namespace Boostable.WhatAgentsTalkAbout.Abstractions
 {
     /// <summary>
-    /// Represents a testimony that includes an associated chapter and a prompt.
+    /// Represents a testimony that includes an associated prompt.
     /// </summary>
     /// <typeparam name="TPrompt">The type of the prompt associated with the testimony. Must implement <see cref="IPromptForTalking{TPrompt}"/>.</typeparam>
-    public interface ITestimonyWithChapterAndPrompt<out TPrompt>
+    public interface ITestimonyWithPrompt<out TPrompt>
         where TPrompt : class, IPromptForTalking<TPrompt>
     {
         /// <summary>
-        /// Gets the current chapter of the talk, if available.
-        /// </summary>
-        ITalkChapter? Chapter { get; }
-
-        /// <summary>
-        /// Gets the prompt associated with the current operation or context.
+        /// Gets the prompt associated with the current operation.
         /// </summary>
         TPrompt? Prompt { get; }
 

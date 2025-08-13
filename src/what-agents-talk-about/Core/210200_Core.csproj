@@ -6,8 +6,8 @@
 		<langVersion>12.0</langVersion>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<RootNamespace>Boostable.WhatTalkAbout.Utils</RootNamespace>
-		<AssemblyName>Boostable.WhatTalkAbout.Utils</AssemblyName>
+		<RootNamespace>Boostable.WhatAgentsTalkAbout.Core</RootNamespace>
+		<AssemblyName>Boostable.WhatAgentsTalkAbout.Core</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>

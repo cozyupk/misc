@@ -1,4 +1,4 @@
-﻿namespace Boostable.WhatTalkAbout.Abstractions
+﻿namespace Boostable.WhatAgentsTalkAbout.Abstractions
 {
     /// <summary>
     /// Represents a chapter in a talk or presentation.

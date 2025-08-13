@@ -1,10 +1,10 @@
-﻿using Boostable.WhatTalkAbout.Abstractions;
+﻿using Boostable.WhatAgentsTalkAbout.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Boostable.WhatTalkAbout.Core
+namespace Boostable.WhatAgentsTalkAbout.Shell
 {
     /// <summary>
     /// Serves as the base class for managing a talk session, providing core functionality for  handling prompts,
@@ -23,7 +23,7 @@ namespace Boostable.WhatTalkAbout.Core
         : TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
         where TPrompt : class, IPromptForTalking<TPrompt>
         where TReadOnlyArtifacts : class, IReadOnlyArtifacts
-        where TArtifacts : class, TReadOnlyArtifacts, IArtifacts, new()
+        where TArtifacts : class, TReadOnlyArtifacts, IArtifacts
     {
         protected ITalkDomainFactory TalkDomainFactory { get; }
 
@@ -122,12 +122,8 @@ namespace Boostable.WhatTalkAbout.Core
         /// <param name="prompts">A read-only list of prompts to include in the outline. Cannot be null.</param>
         /// <returns>An instance of <see cref="ITalkOutline"/> representing the default outline created with the specified
         /// prompts.</returns>
-        protected internal virtual ITalkOutline DefaultOutlineFactory(
+        protected abstract internal ITalkOutline DefaultOutlineFactory(
             IReadOnlyList<TPrompt> prompts
-        )
-        {
-            // Default implementation that creates a simple outline with the provided arrange code and prompts.
-            return new TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>(prompts, TalkDomainFactory);
-        }
+        );
     }
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Boostable.WhatTalkAbout.Abstractions
+namespace Boostable.WhatAgentsTalkAbout.Abstractions
 {
     /// <summary>
     /// Provides a set of abstractions for defining and managing a structured "talk session" workflow,  including
@@ -20,7 +20,7 @@ namespace Boostable.WhatTalkAbout.Abstractions
     public abstract class TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
         where TPrompt : class, IPromptForTalking<TPrompt>
         where TReadOnlyArtifacts : class, IReadOnlyArtifacts
-        where TArtifacts : class, TReadOnlyArtifacts, IArtifacts, new()
+        where TArtifacts : class, TReadOnlyArtifacts, IArtifacts
     {
         /// <summary>
         /// Represents a read-only prerequisite that provides access to associated prompts and artifacts.
@@ -58,7 +58,7 @@ namespace Boostable.WhatTalkAbout.Abstractions
             /// <param name="testimony">The exception representing the testimony. This parameter cannot be <see langword="null"/>.</param>
             /// <returns>An instance of <see cref="ITestimonyWithChapterAndPrompt{TPrompt}"/> containing the specified chapter,
             /// prompt, and testimony.</returns>
-            ITestimonyWithChapterAndPrompt<TPrompt> Create(ITalkChapter? chapter, TPrompt? prompt, Exception testimony);
+            ITestimonyWithChapterAndPrompt<TPrompt> CreateTestimony(ITalkChapter? chapter, TPrompt? prompt, Exception testimony);
 
             /// <summary>
             /// Creates a new testimony with the specified chapter and exception details.
@@ -66,7 +66,7 @@ namespace Boostable.WhatTalkAbout.Abstractions
             /// <param name="chapter">The chapter associated with the testimony. Can be <see langword="null"/> if no chapter is specified.</param>
             /// <param name="testimony">The exception representing the testimony details. Must not be <see langword="null"/>.</param>
             /// <returns>An object implementing <see cref="ITestimonyWithChapter"/> that represents the created testimony.</returns>
-            ITestimonyWithChapter Create(ITalkChapter? chapter, Exception testimony);
+            ITestimonyWithChapter CreateTestimony(ITalkChapter? chapter, Exception testimony);
 
             /// <summary>
             /// Creates a new instance of an object that associates a prompt with a testimony exception.
@@ -75,7 +75,9 @@ namespace Boostable.WhatTalkAbout.Abstractions
             /// <param name="testimony">The exception representing the testimony. This parameter cannot be null.</param>
             /// <returns>An object implementing <see cref="ITestimonyWithPrompt{TPrompt}"/> that encapsulates the provided prompt
             /// and testimony.</returns>
-            ITestimonyWithPrompt<TPrompt> Create(TPrompt? prompt, Exception testimony);
+            ITestimonyWithPrompt<TPrompt> CreateTestimony(TPrompt? prompt, Exception testimony);
+
+            TArtifacts CreateArtifacts();
         }
 
         /// <summary>
@@ -90,12 +92,6 @@ namespace Boostable.WhatTalkAbout.Abstractions
             /// Gets the collection of artifacts associated with the current instance.
             /// </summary>
             new TArtifacts Artifacts { get; }
-
-            /// <summary>
-            /// Sets the collection of prompts to be used.
-            /// </summary>
-            /// <param name="prompts">A read-only list of prompts to set. Cannot be null or empty.</param>
-            void SetPrompt(IReadOnlyList<TPrompt> prompts);
         }
 
         /// <summary>

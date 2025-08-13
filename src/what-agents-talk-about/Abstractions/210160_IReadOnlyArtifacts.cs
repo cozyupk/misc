@@ -1,4 +1,4 @@
-﻿namespace Boostable.WhatTalkAbout.Abstractions
+﻿namespace Boostable.WhatAgentsTalkAbout.Abstractions
 {
     /// <summary>
     /// Represents a read-only collection of artifacts, providing a base interface for extension points.

@@ -2,9 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+	  <Nullable>enable</Nullable>
+	  <RootNamespace>Boostable.WhatTalkAbout.UsageExample01.SieveOfMine</RootNamespace>
+	  <AssemblyName>Boostable.WhatTalkAbout.UsageExample01.SieveOfMine</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Open.Numeric.Primes" Version="4.0.4" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\what-talk-about\Abstractions\210100_Abstractions.csproj" />

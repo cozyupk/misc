@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Boostable.WhatTalkAbout.Abstractions
+namespace Boostable.WhatAgentsTalkAbout.Abstractions
 {
     /// <summary>
     /// Represents a testimony that is associated with a specific chapter.
