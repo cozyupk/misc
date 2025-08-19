@@ -11,6 +11,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="System.Collections.Immutable" Version="9.0.8" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <ProjectReference Include="..\Abstractions\210100_Abstractions.csproj" />
 	</ItemGroup>
 

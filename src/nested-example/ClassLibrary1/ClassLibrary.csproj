@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	<LangVersion>12.0</LangVersion>
+	<ImplicitUsings>disable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	<RootNamespace>Boostable.NestedExample.ClassLibrary</RootNamespace>
+	<AssemblyName>Boostable.NestedExample.ClassLibrary</AssemblyName>
+  </PropertyGroup>
+
+</Project>

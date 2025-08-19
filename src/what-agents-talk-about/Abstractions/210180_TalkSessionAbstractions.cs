@@ -77,6 +77,10 @@ namespace Boostable.WhatAgentsTalkAbout.Abstractions
             /// and testimony.</returns>
             ITestimonyWithPrompt<TPrompt> CreateTestimony(TPrompt? prompt, Exception testimony);
 
+            /// <summary>
+            /// Creates and returns a new instance of the artifacts.
+            /// </summary>
+            /// <returns>An instance of <typeparamref name="TArtifacts"/> representing the created artifacts.</returns>
             TArtifacts CreateArtifacts();
         }
 

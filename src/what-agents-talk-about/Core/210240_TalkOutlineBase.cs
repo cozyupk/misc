@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Boostable.WhatAgentsTalkAbout.Core
@@ -21,9 +19,9 @@ namespace Boostable.WhatAgentsTalkAbout.Core
     /// <typeparam name="TReadOnlyArtifacts">The type of the read-only artifacts associated with the talk session. Must implement <see
     /// cref="IReadOnlyArtifacts"/>.</typeparam>
     /// <typeparam name="TArtifacts">The type of the artifacts associated with the talk session. Must implement <see cref="IArtifacts"/> and 
-    /// <typeparamref name="TReadOnlyArtifacts"/>, and must have a parameterless constructor.</typeparam>
+    /// <typeparamref name="TReadOnlyArtifacts"/>.</typeparam>
     public abstract class TalkOutlineBase<TPrompt, TReadOnlyArtifacts, TArtifacts>
-        : TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
+        : TalkOutlineAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>
         , TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITestimonySummary
         , TalkSessionAbstractions<TPrompt, TReadOnlyArtifacts, TArtifacts>.ITalkOutline
         where TPrompt : class, IPromptForTalking<TPrompt>
@@ -50,6 +48,7 @@ namespace Boostable.WhatAgentsTalkAbout.Core
             TalkChaptersInternal = chapters?.ToList() ?? [];
             TalkDomainFactory = talkDomainFactory ?? throw new ArgumentNullException(nameof(talkDomainFactory));
             CacheTalkChapters = new ReadOnlyCollection<ITalkChapter>(TalkChaptersInternal);
+            TestimonyAdmin = CreateTestimonyAdmin();
         }
 
         /// <summary>
@@ -63,6 +62,18 @@ namespace Boostable.WhatAgentsTalkAbout.Core
         IReadOnlyPrerequisite ITestimonySummary.Prerequisite => Prerequisite;
 
         /// <summary>
+        /// Adds a testimony entry based on the provided exception and optional context.
+        /// </summary>
+        /// <remarks>This method records the given exception along with optional contextual information,
+        /// such as a chapter or prompt, to assist in tracking or debugging issues. Ensure that <paramref name="ex"/> is
+        /// not <see langword="null"/> when calling this method.</remarks>
+        /// <param name="ex">The exception to be recorded as testimony. Cannot be <see langword="null"/>.</param>
+        /// <param name="chapter">An optional chapter providing additional context for the testimony. Can be <see langword="null"/>.</param>
+        /// <param name="prompt">An optional prompt associated with the testimony. Can be <see langword="null"/>.</param>
+        protected void AddTestimony(Exception ex, ITalkChapter? chapter = null, TPrompt? prompt = null)
+            => TestimonyAdmin.Add(ex, chapter, prompt);
+
+        /// <summary>
         /// Gets a read-only list of exceptions representing the general testimony.
         /// </summary>
         IReadOnlyList<Exception> ITestimonySummary.GeneralTestimony
@@ -71,8 +82,7 @@ namespace Boostable.WhatAgentsTalkAbout.Core
             {
                 var cached = CacheGeneralTestimony;
                 if (cached is not null) return cached;
-                lock (SyncLockGeneralTestimony)
-                    return CacheGeneralTestimony ??= SnapshotList(GeneralTestimony);
+                return CacheGeneralTestimony ??= TestimonyAdmin.SnapshotGeneral();
             }
         }
 
@@ -85,8 +95,7 @@ namespace Boostable.WhatAgentsTalkAbout.Core
             {
                 var cached = CacheAllTestimony;
                 if (cached is not null) return cached;
-                lock (SyncLockAllTestimony)
-                    return CacheAllTestimony ??= SnapshotList(AllTestimony);
+                return CacheAllTestimony ??= TestimonyAdmin.SnapshotAll();
             }
         }
 
@@ -102,8 +111,7 @@ namespace Boostable.WhatAgentsTalkAbout.Core
             {
                 var cached = CacheTestimonyForEachChapterAndPrompt;
                 if (cached is not null) return cached;
-                lock (SyncLockTestimonyForEachChapterAndPrompt)
-                    return CacheTestimonyForEachChapterAndPrompt ??= SnapshotDictOfList(TestimonyForEachChapterAndPrompt);
+                return CacheTestimonyForEachChapterAndPrompt ??= TestimonyAdmin.SnapshotByChapterPrompt();
             }
         }
 
@@ -119,8 +127,7 @@ namespace Boostable.WhatAgentsTalkAbout.Core
             {
                 var cached = CacheTestimonyForEachPrompt;
                 if (cached is not null) return cached;
-                lock (SyncLockTestimonyForEachPrompt)
-                    return CacheTestimonyForEachPrompt ??= SnapshotDictOfList(TestimonyForEachPrompt);
+                return CacheTestimonyForEachPrompt ??= TestimonyAdmin.SnapshotByPrompt();
             }
         }
 
@@ -136,8 +143,7 @@ namespace Boostable.WhatAgentsTalkAbout.Core
             {
                 var cached = CacheTestimonyForEachChapter;
                 if (cached is not null) return cached;
-                lock (SyncLockTestimonyForEachChapter)
-                    return CacheTestimonyForEachChapter ??= SnapshotDictOfList(TestimonyForEachChapter);
+                return CacheTestimonyForEachChapter ??= TestimonyAdmin.SnapshotByChapter();
             }
         }
 
@@ -147,8 +153,7 @@ namespace Boostable.WhatAgentsTalkAbout.Core
         /// <remarks>
         /// The chapter list is immutable after construction. To ensure stable enumeration, a read-only snapshot is returned.
         /// </remarks>
-        IReadOnlyList<ITalkChapter> ITalkOutline.TalkChapters
-            => CacheTalkChapters ??= new ReadOnlyCollection<ITalkChapter>(TalkChaptersInternal);
+        IReadOnlyList<ITalkChapter> ITalkOutline.TalkChapters => CacheTalkChapters;
 
         /// <summary>
         /// Provides a testimony based on the current context of the implementation.
@@ -209,76 +214,29 @@ namespace Boostable.WhatAgentsTalkAbout.Core
         /// </summary>
         protected ConcretePrerequisite Prerequisite { get; }
 
-        // ===== Thread-safe IsMeaningful (atomic counter) =====
-
-        /// <summary>
-        /// Represents the total count of all testimonies processed.
-        /// </summary>
-        /// <remarks>This field is incremented atomically using <see cref="Interlocked"/>
-        /// to ensure thread safety. Reads are performed using <see cref="Volatile.Read"/> to guarantee
-        /// visibility across threads.</remarks>
-        private int _allTestimonyCount; // use Interlocked.Increment to increment, volatile.Read to read
-
         /// <summary>
         /// Gets a value indicating whether the current state is considered meaningful.
         /// </summary>
-        protected virtual bool IsMeaningful => Volatile.Read(ref _allTestimonyCount) > 0;
-
-        // Internal storage for testimonies and chapters
+        protected virtual bool IsMeaningful => TestimonyAdmin.TotalTestimonyCount > 0;
 
         /// <summary>
-        /// Gets the collection of general testimonies.
+        /// Creates an instance of a testimony administration object.
         /// </summary>
-        private List<Exception> GeneralTestimony { get; } = [];
+        /// <remarks>This method is intended to be overridden in derived classes to provide a custom
+        /// implementation  of the <see cref="ITestimonyAdmin"/> interface. By default, it creates a new instance of 
+        /// <see cref="TestimonyAdmin{TPrompt, TReadOnlyArtifacts, TArtifacts}"/> using the provided  domain factory and
+        /// cache invalidation delegate.</remarks>
+        /// <returns>An instance of <see cref="ITestimonyAdmin"/> for managing testimony-related operations.</returns>
+        protected virtual ITestimonyAdmin CreateTestimonyAdmin()
+            => new TestimonyAdmin<TPrompt, TReadOnlyArtifacts, TArtifacts>(
+                TalkDomainFactory,
+                InvalidateCaches
+            );
 
         /// <summary>
-        /// Gets the synchronization lock object used to ensure thread-safe access to shared resources related to
-        /// general testimony operations.
+        /// Gets the instance of <see cref="ITestimonyAdmin"/> used to manage testimony-related operations.
         /// </summary>
-        private object SyncLockGeneralTestimony { get; } = new object();
-
-        /// <summary>
-        /// Gets the collection of all testimonies, including their associated chapters and prompts.
-        /// </summary>
-        private List<ITestimonyWithChapterAndPrompt<TPrompt>> AllTestimony { get; } = [];
-
-        /// <summary>
-        /// Gets the synchronization lock object used to coordinate access to shared resources  related to testimony
-        /// operations.
-        /// </summary>
-        private object SyncLockAllTestimony { get; } = new object();
-
-        /// <summary>
-        /// Gets a dictionary that maps each chapter and prompt pair to a read-only list of exceptions.
-        /// </summary>
-        private Dictionary<(ITalkChapter, TPrompt), IReadOnlyList<Exception>> TestimonyForEachChapterAndPrompt { get; } = new(ChapterPromptReferenceComparer.Instance);
-
-        /// <summary>
-        /// Gets the synchronization lock object used to ensure thread safety  when accessing or modifying testimony
-        /// data for each chapter and prompt.
-        /// </summary>
-        private object SyncLockTestimonyForEachChapterAndPrompt { get; } = new object();
-
-        /// <summary>
-        /// Gets a dictionary that maps each prompt to a read-only list of testimonies associated with it.
-        /// </summary>
-        private Dictionary<TPrompt, IReadOnlyList<ITestimonyWithChapter>> TestimonyForEachPrompt { get; } = [];
-
-        /// <summary>
-        /// Gets the synchronization lock object used to ensure thread safety for operations related to testimony for
-        /// each prompt.
-        /// </summary>
-        private object SyncLockTestimonyForEachPrompt { get; } = new object();
-
-        /// <summary>
-        /// Gets a dictionary that maps each chapter to a read-only list of testimonies with prompts.
-        /// </summary>
-        private Dictionary<ITalkChapter, IReadOnlyList<ITestimonyWithPrompt<TPrompt>>> TestimonyForEachChapter { get; } = [];
-
-        /// <summary>
-        /// Gets the synchronization lock object used to ensure thread-safe access to testimony data for each chapter.
-        /// </summary>
-        private object SyncLockTestimonyForEachChapter { get; } = new object();
+        protected ITestimonyAdmin TestimonyAdmin { get; }
 
         /// <summary>
         /// Gets the collection of talk chapters associated with the current instance.
@@ -338,123 +296,6 @@ namespace Boostable.WhatAgentsTalkAbout.Core
             return this;
         }
 
-        /// <summary>
-        /// Records a testimony (typically an exception) at chapter/prompt granularity.
-        /// </summary>
-        /// <param name="testimony">Exception to record. Must not be null.</param>
-        /// <param name="chapter">Associated chapter, or null for “general”.</param>
-        /// <param name="prompt">Associated prompt, or null for chapter-only/general.</param>
-        /// <remarks>
-        /// <list type="bullet">
-        /// <item><description>Thread-safety: internal stores are protected by locks.</description></item>
-        /// <item><description>Cache: reading snapshots are invalidated after this call and will be rebuilt on next access.</description></item>
-        /// <item><description>Aggregation rules: entries are grouped by (chapter,prompt), by prompt, by chapter, and as general (both null).</description></item>
-        /// </list>
-        /// </remarks>
-        internal void AddTestimony<TKey, TValue>(
-            TKey key,
-            TValue value,
-            Dictionary<TKey, IReadOnlyList<TValue>> dictionary,
-            object syncLock)
-        {
-            lock (syncLock)
-            {
-                if (!dictionary.TryGetValue(key, out var existing))
-                {
-                    dictionary[key] = [value];
-                }
-                else if (existing is List<TValue> list)
-                {
-                    list.Add(value);
-                }
-                else
-                {
-                    var newList = new List<TValue>(existing) { value };
-                    dictionary[key] = newList;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Adds a testimony to the appropriate collections based on the specified chapter and prompt.
-        /// </summary>
-        /// <remarks>This method organizes testimonies into various collections based on the provided
-        /// chapter and prompt.  If both <paramref name="chapter"/> and <paramref name="prompt"/> are <see
-        /// langword="null"/>, the testimony is added to the general testimony collection. If both are provided, the
-        /// testimony is added to collections specific to the chapter and prompt combination. Additionally, the method
-        /// ensures thread safety when modifying shared collections and invalidates caches after updates.</remarks>
-        /// <param name="testimony">The exception instance representing the testimony to be added. Cannot be <see langword="null"/>.</param>
-        /// <param name="chapter">The chapter associated with the testimony, or <see langword="null"/> if the testimony is general.</param>
-        /// <param name="prompt">The prompt associated with the testimony, or <see langword="null"/> if the testimony is not tied to a
-        /// specific prompt.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="testimony"/> is <see langword="null"/>.</exception>
-        protected virtual void AddTestimony(
-            Exception testimony,
-            ITalkChapter? chapter = null,
-            TPrompt? prompt = null
-        )
-        {
-            if (testimony == null) throw new ArgumentNullException(nameof(testimony));
-
-            // Add to AllTestimony (1 item = 1 count)
-            lock (SyncLockAllTestimony)
-            {
-                AllTestimony.Add(TalkDomainFactory.CreateTestimony(chapter, prompt, testimony));
-                Interlocked.Increment(ref _allTestimonyCount); // Increment the count atomically
-            }
-
-            if (chapter is null && prompt is null)
-            {
-                lock (SyncLockGeneralTestimony)
-                {
-                    GeneralTestimony.Add(testimony);
-                }
-                InvalidateCaches();
-                return;
-            }
-
-            if (chapter is not null && prompt is not null)
-            {
-                AddTestimony((chapter, prompt), testimony, TestimonyForEachChapterAndPrompt, SyncLockTestimonyForEachChapterAndPrompt);
-            }
-            if (prompt is not null)
-            {
-                AddTestimony(prompt, TalkDomainFactory.CreateTestimony(chapter, testimony), TestimonyForEachPrompt, SyncLockTestimonyForEachPrompt);
-            }
-            if (chapter is not null)
-            {
-                AddTestimony(chapter, TalkDomainFactory.CreateTestimony(prompt, testimony), TestimonyForEachChapter, SyncLockTestimonyForEachChapter);
-            }
-
-            InvalidateCaches(); // Invalidate all caches after adding testimony
-        }
-
-        /// <summary>
-        /// Comparer for (chapter, prompt) based on <b>reference equality</b>.
-        /// </summary>
-        /// <remarks>
-        /// <list type="bullet">
-        /// <item><description>Equality is determined by instance identity, not value equality (e.g., not record value comparison).</description></item>
-        /// <item><description>When using records or other value-equality types as keys, be aware that this comparer intentionally ignores value equality.</description></item>
-        /// <item><description>Uses <see cref="RuntimeHelpers.GetHashCode(object)"/> to compute a reference-based hash.</description></item>
-        /// </list>
-        /// </remarks>
-        protected sealed class ChapterPromptReferenceComparer
-            : IEqualityComparer<(ITalkChapter, TPrompt)>
-        {
-            public static ChapterPromptReferenceComparer Instance { get; } = new();
-            private ChapterPromptReferenceComparer() { }
-
-            public bool Equals((ITalkChapter, TPrompt) x, (ITalkChapter, TPrompt) y)
-                => ReferenceEquals(x.Item1, y.Item1) && ReferenceEquals(x.Item2, y.Item2);
-
-            public int GetHashCode((ITalkChapter, TPrompt) obj)
-            {
-                int h1 = obj.Item1 is null ? 0 : RuntimeHelpers.GetHashCode(obj.Item1);
-                int h2 = obj.Item2 is null ? 0 : RuntimeHelpers.GetHashCode(obj.Item2);
-                return (h1 << 5 | h1 >> 27) ^ h2;
-            }
-        }
 
         /// <summary>
         /// Represents a chapter in a talk or presentation, identified by its name.
@@ -515,7 +356,7 @@ namespace Boostable.WhatAgentsTalkAbout.Core
         /// </summary>
         /// <remarks>This field is used to store a read-only list of talk chapters, which may be null if
         /// the cache has not been initialized.</remarks>
-        private IReadOnlyList<ITalkChapter>? CacheTalkChapters { get; set; }
+        private IReadOnlyList<ITalkChapter> CacheTalkChapters { get; set; }
 
         /// <summary>
         /// Invalidates all cached testimony data, resetting the caches to their initial state.
@@ -530,41 +371,6 @@ namespace Boostable.WhatAgentsTalkAbout.Core
             CacheTestimonyForEachChapterAndPrompt = null;
             CacheTestimonyForEachPrompt = null;
             CacheTestimonyForEachChapter = null;
-        }
-
-        /// <summary>
-        /// Creates a snapshot of the specified read-only list.
-        /// </summary>
-        /// <typeparam name="T">The type of elements in the list.</typeparam>
-        /// <param name="source">The source list to create a snapshot from. Must not be <see langword="null"/>.</param>
-        /// <returns>A new read-only list containing the elements of the source list at the time of the call. Changes to the
-        /// original list after the snapshot is created will not affect the returned list.</returns>
-        private static IReadOnlyList<T> SnapshotList<T>(IReadOnlyList<T> source)
-            => source is List<T> list ? [.. list]
-                                      : [.. source];
-
-        /// <summary>
-        /// Creates a deep snapshot of a dictionary where the values are read-only lists.
-        /// </summary>
-        /// <remarks>This method creates a deep copy of the dictionary and its lists, ensuring that
-        /// modifications to the returned dictionary or its lists do not affect the original dictionary or its
-        /// lists.</remarks>
-        /// <typeparam name="TKey">The type of the keys in the dictionary. Must be non-nullable.</typeparam>
-        /// <typeparam name="TVal">The type of the elements in the lists that are the values of the dictionary.</typeparam>
-        /// <param name="source">The source dictionary to snapshot. Cannot be null.</param>
-        /// <returns>A new dictionary containing the same keys as the source dictionary, where each value is a new list
-        /// containing the elements of the corresponding list in the source dictionary.</returns>
-        private static IReadOnlyDictionary<TKey, IReadOnlyList<TVal>> SnapshotDictOfList<TKey, TVal>(
-            Dictionary<TKey, IReadOnlyList<TVal>> source)
-            where TKey : notnull
-        {
-            var copy = new Dictionary<TKey, IReadOnlyList<TVal>>(source.Count, source.Comparer);
-            foreach (var kv in source)
-            {
-                var v = kv.Value is List<TVal> l ? [.. l] : new List<TVal>(kv.Value);
-                copy[kv.Key] = v;
-            }
-            return copy;
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using Boostable.WhatTalkAbout.Abstractions;
-using Boostable.WhatTalkAbout.Core;
+﻿using Boostable.WhatAgentsTalkAbout.Abstractions;
+using Boostable.WhatAgentsTalkAbout.Core;
+using Boostable.WhatAgentsTalkAbout.Shell;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -12,14 +14,14 @@ using System.Threading.Tasks;
 // ※アルゴリズム最適化／キャッシュ等は本例のスコープ外です。
 // ★レビュー時のお願い：以上を前提に、APIの使い方と設計意図の可読性に焦点を当ててコメントしてください。
 
-namespace Boostable.WhatTalkAbout.UsageExample01.StringFormat
+namespace Boostable.WhatAgentsTalkAbout.UsageExample01
 {
     ///////////////////////////////
     /// プロンプト（入力）の型 ////
     ///////////////////////////////
-    internal interface IPromptForStringFormat<TSelf> : IPromptForTalking<TSelf>
-        where TSelf : class, IPromptForTalking<TSelf>
-    {
+
+    public interface IPromptForStringFormat {
+
         /// <summary>カルチャ固有のフォーマットプロバイダ</summary>
         IFormatProvider FormatProvider { get; }
 
@@ -27,19 +29,24 @@ namespace Boostable.WhatTalkAbout.UsageExample01.StringFormat
         string Format { get; }
     }
 
+    public interface IPromptForStringFormat<TSelf> : IPromptForTalking<TSelf>, IPromptForStringFormat
+        where TSelf : class, IPromptForStringFormat<TSelf>
+    {
+    }
+
     ////////////////////////////////
     /////  String.Formatレイヤ  ////
     ////////////////////////////////
 
     /// <summary>このレイヤでの中間入力</summary>
-    internal interface IReadOnlyStringFormatArtifacts : IReadOnlyArtifacts
+    public interface IReadOnlyStringFormatArtifacts : IReadOnlyArtifacts
     {
         /// <summary>Arrangeされたパラメータの配列</summary>
         object[]? ArrangedParameters { get; }
     }
 
     /// <summary>このレイヤでの中間出力</summary>
-    internal interface IStringFormatArtifacts : IReadOnlyStringFormatArtifacts, IArtifacts
+    public interface IStringFormatArtifacts : IReadOnlyStringFormatArtifacts, IArtifacts
     {
         /// <summary>フォーマット結果を記録する</summary>
         void StoreFormatResult(IPromptForTalking key, string formattedResult);
@@ -74,22 +81,30 @@ namespace Boostable.WhatTalkAbout.UsageExample01.StringFormat
         /// <remarks>最後に親クラスの PrepareForTalk() を呼び出す。</remarks>
         protected override void PrepareForTalk()
         {
-            if (Prerequisite.Artifacts.ArrangedParameters is null)
+            var artifacts = Prerequisite.Artifacts;
+            var prompts = Prerequisite.Prompts;
+
+            if (artifacts.ArrangedParameters is null)
             {
                 // ArrangeParametersOutline でパラメータがアレンジされていない場合は、何もしない。
+                base.PrepareForTalk();
                 return;
             }
-            foreach (var prompt in Prerequisite.Prompts)
+
+            var args = artifacts.ArrangedParameters;
+            foreach (var prompt in prompts)
             {
+                prompt.CancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
-                    var formatted = string.Format(prompt.FormatProvider, prompt.Format, Prerequisite.Artifacts.ArrangedParameters);
-                    Prerequisite.Artifacts.StoreFormatResult(prompt, formatted);
+                    var formatted = string.Format(prompt.FormatProvider, prompt.Format, args);
+                    artifacts.StoreFormatResult(prompt, formatted);
                 }
                 catch (Exception ex)
                 {
                     // 例外は記録する。
-                    Prerequisite.Artifacts.StoreFormatResult(prompt, $"Unexpected error: type={ex.GetType().Name}; message={ex.Message}");
+                    artifacts.StoreFormatResult(prompt, $"Unexpected error: type={ex.GetType().Name}; message={ex.Message}");
                     AddTestimony(
                             ex, CurrentChapter, prompt
                     );
@@ -106,12 +121,13 @@ namespace Boostable.WhatTalkAbout.UsageExample01.StringFormat
     // Func<object[]> を使用して、パラメータをアレンジするレイヤ
 
     /// <summary>このレイヤでの中間入力は存在しないが形式的に定義（親レイヤから継承）</summary>
-    internal interface IReadOnlyArrangeParametersArtifacts : IReadOnlyStringFormatArtifacts
+    public interface IReadOnlyArrangeParametersArtifacts : IReadOnlyStringFormatArtifacts
     {
     }
 
+
     /// <summary>このレイヤでの中間出力（親レイヤから継承した上で定義）</summary>
-    internal interface IArrangeParametersArtifacts : IStringFormatArtifacts
+    public interface IArrangeParametersArtifacts : IStringFormatArtifacts, IReadOnlyArrangeParametersArtifacts
     {
         /// <summary>Arrangeされたパラメータの配列</summary>
         void StoreArrangedParameters(object[] parameters);
@@ -156,10 +172,15 @@ namespace Boostable.WhatTalkAbout.UsageExample01.StringFormat
                 Prerequisite.Artifacts.StoreArrangedParameters(
                     FuncToArrangeParameters()
                 );
+            } catch (OperationCanceledException ocex)
+            {
+                // キャンセルされた場合は、キャンセルの旨を記録する。
+                AddTestimony(ocex, CurrentChapter);
+                throw; // キャンセルは制御フロー：捕捉して証言を残しつつ、上位へ伝えるため再スローする
             }
             catch (Exception ex)
             {
-                // 例外は記録する。
+                // その他の例外は記録する。
                 AddTestimony(ex, CurrentChapter);
             }
             base.PrepareForTalk();
@@ -176,6 +197,137 @@ namespace Boostable.WhatTalkAbout.UsageExample01.StringFormat
             // （同期メソッド中で親クラスの PrepareForTalk() を呼び出すため、ここでは PrepareForTalkAsync() は呼ばない。）
             PrepareForTalk();
             return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>中間成果物(Artifacts)と最終出結果を格納するクラスのインスタンスを提供するクラス</summary>
+    internal class StringFormatTalkDomainFactory<TPrompt>
+        : TalkDomainFactoryBase<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>
+        where TPrompt : class, IPromptForStringFormat<TPrompt>
+    {
+        /// <summary>中間成果物格納用インスタンスを提供する</summary>
+        protected override IArrangeParametersArtifacts CreateArtifacts()
+        {
+            return new ArrangeParametersArtifacts();
+        }
+
+        /// <summary>中間成果物格納のためのインタフェイスを実装するクラス</summary>
+        /// <remarks>さらなる拡張を考慮し、sealedにはしないでおく。</remarks>
+        internal class ArrangeParametersArtifacts : IArrangeParametersArtifacts
+        {
+            /// <summary>"アレンジ" されれたパラメータの配列</summary>
+            public object[]? ArrangedParameters { get; private set; }
+
+            /// <summary>フォーマット結果を格納するための辞書</summary>
+            public ConcurrentDictionary<IPromptForTalking, string> FormattedResults { get; } = new();
+
+            public void StoreArrangedParameters(object[] parameters)
+            {
+                if (parameters is null)
+                {
+                    throw new ArgumentNullException(nameof(parameters), "Parameters cannot be null.");
+                }
+                ArrangedParameters = parameters;
+            }
+
+            public void StoreFormatResult(IPromptForTalking key, string formattedResult)
+            {
+                if (key is null)
+                {
+                    throw new ArgumentNullException(nameof(key), "Key cannot be null.");
+                }
+                if (formattedResult is null)
+                {
+                    throw new ArgumentNullException(nameof(formattedResult), "Formatted result cannot be null.");
+                }
+                FormattedResults[key] = formattedResult;
+            }
+
+            /// <summary>結果取得のためのユーティリティメソッド</summary>
+            public bool TryGetFormattedResult(IPromptForTalking key, out string? result)
+                => FormattedResults.TryGetValue(key, out result);
+        }
+    }
+
+    ///////////////////////////////////
+    //// ユーザー向けファサード層  ////
+    ///////////////////////////////////
+
+    public interface IStringFormatTalkSession
+    {
+
+    }
+
+    internal class StringFormatTalkSession<TPrompt>(
+        Func<object[]> funcToArrangeParameters,
+        TPrompt basePrompt,
+        TalkSessionAbstractions<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>.ITalkDomainFactory talkDomainFactory,
+        Func<TPrompt, IReadOnlyList<TPrompt>>? promptVariationBuilder = null,
+        Func<IReadOnlyList<TPrompt>, TalkSessionAbstractions<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>.ITalkOutline>? outlineFactory = null
+    ) : TalkSessionBase<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>(basePrompt, talkDomainFactory, promptVariationBuilder, outlineFactory)
+      , IStringFormatTalkSession
+        where TPrompt : class, IPromptForStringFormat<TPrompt>
+    {
+        protected override ITalkOutline DefaultOutlineFactory(IReadOnlyList<TPrompt> prompts)
+        {
+            return new ArrangeParametersOutline<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>(
+                prompts,
+                funcToArrangeParameters,
+                TalkDomainFactory
+            );
+        }
+    }
+
+    /// <summary>
+    /// 最終的にユーザーに提供する、会話セッションのエンドポイントを提供するファクトリクラス。
+    /// </summary>
+    public static class SimpleStringFormatTalkSessionFactory
+    {
+        /// <summary>パラメータを Func でアレンジするバージョン</summary>
+        public static IStringFormatTalkSession Create<TPrompt>(
+            Func<object[]> funcToArrangeParameters,
+            TPrompt basePrompt,
+            Func<TPrompt, IReadOnlyList<TPrompt>>? promptVariationBuilder = null,
+            TalkSessionAbstractions<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>.ITalkDomainFactory? talkDomainFactory = null,
+            Func<IReadOnlyList<TPrompt>, TalkSessionAbstractions<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>.ITalkOutline>? outlineFactory = null
+        )
+            where TPrompt : class, IPromptForStringFormat<TPrompt>
+        {
+            _ = basePrompt ?? throw new ArgumentNullException(nameof(basePrompt), "Base prompt cannot be null.");
+            _ = funcToArrangeParameters ?? throw new ArgumentNullException(nameof(funcToArrangeParameters), "Func to arrange parameters cannot be null.");
+
+            talkDomainFactory ??= new StringFormatTalkDomainFactory<TPrompt>();
+
+            return new StringFormatTalkSession<TPrompt>(
+                funcToArrangeParameters,
+                basePrompt,
+                talkDomainFactory,
+                promptVariationBuilder,
+                outlineFactory
+            );
+        }
+
+        /// <summary>パラメータを配列で指定するバージョン。</summary>
+        public static IStringFormatTalkSession Create<TPrompt>(
+            object[] parameters,
+            TPrompt basePrompt,
+            Func<TPrompt, IReadOnlyList<TPrompt>>? promptVariationBuilder = null,
+            TalkSessionAbstractions<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>.ITalkDomainFactory? talkDomainFactory = null,
+            Func<IReadOnlyList<TPrompt>, TalkSessionAbstractions<TPrompt, IReadOnlyArrangeParametersArtifacts, IArrangeParametersArtifacts>.ITalkOutline>? outlineFactory = null
+        )
+            where TPrompt : class, IPromptForStringFormat<TPrompt>
+        {
+            // parameters の validation
+            _ = parameters ?? throw new ArgumentNullException(nameof(parameters), "Parameters cannot be null.");
+
+            // Sessionを生成して返す
+            return Create(
+                () => parameters ?? throw new ArgumentNullException(nameof(parameters), "Parameters cannot be null."),
+                basePrompt,
+                promptVariationBuilder,
+                talkDomainFactory,
+                outlineFactory
+            );
         }
     }
 }
