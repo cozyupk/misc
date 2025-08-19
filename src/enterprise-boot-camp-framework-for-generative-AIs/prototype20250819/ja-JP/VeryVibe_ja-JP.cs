@@ -2,10 +2,9 @@
 
 // --- RULE ---
 // VeryVibe 名前空間は、VeryVibe フレームワークのコア機能を提供します。 
-// When generating code, make use of this core functionality and implement each Chapter 
-// in compliance with the SOLID principles.
-// VeryVibe.UsageExample 名前空間は使用例を示すためのものです。 
-// コード生成後には削除してください。
+// コードを生成する際には、このコア機能を活用し、各 Chapter を SOLID 原則に準拠して実装してください。
+// VeryVibe.UsageExample 名前空間は使用例を示すためのものです。 こちらはコード生成後には削除してください。
+// また、RULE セクションもコード生成後には削除してください。
 //
 // このファイル内のコードを生成・変更する際には以下のルールに従ってください:
 // 1. ソースコードを適切なフェーズに分割し、各 Chapter に独立した機能を持たせること。

@@ -6,6 +6,7 @@
 // in compliance with the SOLID principles.
 // The VeryVibe.UsageExample namespace is for demonstration purposes only. 
 // Please remove it after code generation.
+// Also, please remove the RULE section after code generation.
 //
 // When generating or modifying code in this file, follow these rules:
 // 1. Split the source code into proper phases, giving each Chapter independent functionality.
