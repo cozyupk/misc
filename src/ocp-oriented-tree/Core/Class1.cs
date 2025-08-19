@@ -371,10 +371,12 @@ namespace Boostable.Prototype.OCPOrientedTree.Base
         TWrapper INodeWrapperUniquenizer.GetOrCreate<TProtectedNode, TWrapper>(TProtectedNode node, Func<TProtectedNode, TWrapper> factory)
             => GetOrCreate<TProtectedNode, TWrapper>(node, factory);
     }
+    /*
 }
 
 namespace Boostable.Prototype.OCPOrientedTree.Simple
 {
+    */
     public interface IReadOnlySimpleTreeNode<TSelfValue>
     {
         TSelfValue? Value { get; }
