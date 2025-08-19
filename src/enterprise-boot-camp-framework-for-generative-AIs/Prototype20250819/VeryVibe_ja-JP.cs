@@ -67,6 +67,9 @@
 */
 // --- END RULE ---
 
+using System;
+using System.Collections.Generic;
+
 namespace VeryVibe.ja_JP
 {
     // ----- VeryVibe Framework -----
