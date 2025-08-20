@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+	</PropertyGroup>
+	<ItemGroup>
+		<!-- 画像処理（必須） -->
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.*" />
+		<!-- 線や図形を ImageSharp で描く場合のみ（必要時に有効化）
+     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="*"/> -->
+		<!-- CLI（必須） -->
+		<PackageReference Include="Spectre.Console.Cli" Version="*" />
+		<!-- 見栄えを整える（オプション） -->
+		<PackageReference Include="Spectre.Console" Version="*" />
+		<!-- ロギング（必須・軽量） -->
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
+	</ItemGroup>
+</Project>
