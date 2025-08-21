@@ -1,4 +1,16 @@
-﻿#nullable enable
+﻿// 本ファイルのライセンスはプロンプトを含め MIT License です。
+// Copyright (C) 2025 cozyupk
+// https://github.com/cozyupk
+// ※ このコードおよびプロンプトは研究・学習用途の公開です。
+//    未完成の部分や不具合を含みますが、自由にご利用ください。
+
+// The license of this file, including the prompts, is MIT License.
+// Copyright (C) 2025 cozyupk
+// https://github.com/cozyupk
+// Note: This code and its prompts are released for research and educational use.
+//       It is incomplete and contains bugs, but you are free to use it.
+
+#nullable enable
 
 // --- ユーザー向け ---
 // このファイルを ChatGPT とのバイブコーディングで利用する場合は、チャットの冒頭で次のプロンプトを入力することを推奨します。

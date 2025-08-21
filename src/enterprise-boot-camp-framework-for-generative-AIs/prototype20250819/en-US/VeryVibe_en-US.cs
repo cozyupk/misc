@@ -1,4 +1,10 @@
-﻿#nullable enable
+﻿// The license of this file, including the prompts, is MIT License.
+// Copyright (C) 2025 cozyupk
+// https://github.com/cozyupk
+// Note: This code and its prompts are released for research and educational use.
+//       It is incomplete and contains bugs, but you are free to use it.
+
+#nullable enable
 
 // --- RULE ---
 // The VeryVibe namespace provides the core functionality of the VeryVibe framework. 

@@ -1,4 +1,16 @@
-﻿#nullable enable
+﻿// 本ファイルのライセンスはプロンプトを含め MIT License です。
+// Copyright (C) 2025 cozyupk
+// https://github.com/cozyupk
+// ※ このコードおよびプロンプトは研究・学習用途の公開です。
+//    未完成の部分や不具合を含みますが、自由にご利用ください。
+
+// The license of this file, including the prompts, is MIT License.
+// Copyright (C) 2025 cozyupk
+// https://github.com/cozyupk
+// Note: This code and its prompts are released for research and educational use.
+//       It is incomplete and contains bugs, but you are free to use it.
+
+#nullable enable
 
 // --- ユーザー向け ---
 // ■■■ このファイルを ChatGPT とのバイブコーディングで利用する場合は、チャットの冒頭で次のプロンプトを入力することを推奨します。■■■ 
@@ -201,7 +213,6 @@ this section must explicitly report those decisions. Each item should include:
 - **Future Suggestion**: Any recommendation for refinement or review
 
 */
-// --- END RULE ---
 
 /* =============================================================================
  * コメント出力フォーマット契約
@@ -253,8 +264,8 @@ this section must explicitly report those decisions. Each item should include:
  *    *    - 目的: ...
  *    *    - 実行形態: ...
  *    *    ...
- *    * 例: LissajousTool png -ax 3 -ay 2 --confirm -o .\out\classic.png
- *    * 例: LissajousTool gif -ax 5 -ay 7 --phase-sweep 0..360 --frames 120 --fps 30 --loop 0 --confirm -o .\out\spin.gif
+ *    * 例: LissajousTool png -ax 3 -ay 2 --assume-yes -o .\out\classic.png
+ *    * 例: LissajousTool gif -ax 5 -ay 7 --phase-sweep 0..360 --frames 120 --fps 30 --loop 0 --assume-yes -o .\out\spin.gif
  *    *\/
  *
  * 実行時の追加注意:
@@ -264,6 +275,7 @@ this section must explicitly report those decisions. Each item should include:
  *   - 途中で要約が必要なら、必ずコメント内に含める（外に書かない）。
  * =============================================================================
  */
+// --- END RULE ---
 
 // === コメント生成手順 1. 仕様合意と設計方針 ===
 // ※ユーザーからコメント生成手順1.の実施をプロンプトで指示された場合、次の事項を本ソースコードにコメントとしてコピー&ペースト可能な形でチャット出力する。
@@ -423,14 +435,14 @@ Specification Review Template
  *      すべて検証必須（型/範囲/サイズ/形式）。パスは GetFullPath で正規化し、ベースディレクトリ外・
  *      シンボリックリンク・再解析ポイントを拒否（allowlist優先）。
  *    - 出力: 画像ファイルを新規作成のみ（FileMode.CreateNew）。デフォルトは dry-run で検証のみ。
- *      実生成には --confirm が必須。既存ファイル上書きは --allow-overwrite が明示的に必要。
+ *      実生成には -y/--yes（--assume-yes / --no-dry-run / --write のいずれか）が必須。既存ファイル上書きは --allow-overwrite が明示的に必要。
  *    - 拡張子と最大サイズ: png/gif に限定。最大サイズは --max-bytes で上限を指定可能（安全弁）。
  *    - 文字エンコード: ログ/コンソールはUTF-8想定。画像のDPIやメタデータはオプションで付与可。
  *
  * 3) 失敗方針
  *    - 入力検証に失敗: 即中断（非0終了コード）。ユーザー向けに短文要約、ログには構造化メタ情報。
  *    - 生成途中の失敗: 一時ファイルへ出力→検証→原子的Move方針。Move不可や検証失敗時はロールバック。
- *    - 破壊的操作の防止: 既定は dry-run。実出力は --confirm 必須。上書きは個別に --allow-overwrite 必須。
+ *    - 破壊的操作の防止: 既定は dry-run。実出力は -y/--yes（等）必須。上書きは個別に --allow-overwrite 必須。
  *
  * 4) セキュリティ前提
  *    - 非破壊が既定（No Destructive Changes）。
@@ -471,8 +483,8 @@ Specification Review Template
  *
  *    安全設定（既定は“安全側”）
  *      --dry-run                                破壊的操作をせず検証のみ（既定で有効）
- *      --confirm                                検証後に実際のファイル生成を許可
- *      --allow-overwrite                        既存ファイルの上書きを許可（--confirm と併用推奨）
+ *      --assume-yes                             検証後に実際のファイル生成を許可
+ *      --allow-overwrite                        既存ファイルの上書きを許可（--allow-overwrite と併用推奨）
  *      --out-dir <path>                         出力先ディレクトリ（-o 未指定時のフォールバック）
  *      --max-bytes <long>                       生成物の最大サイズ上限（安全のための拒否閾値）
  *
@@ -504,7 +516,7 @@ Specification Review Template
  *    検証/制約（実行時バリデーション例）
  *      - パラメータの型・範囲を検査（負数/NaN/極端な samples を拒否/警告）。
  *      - 出力パスは正規化し、ベースディレクトリ配下のみ許可。シンボリックリンクや再解析ポイントは拒否。
- *      - --confirm 不在時は常に dry-run（生成なし）。
+ *      - 承認フラグ（-y/--yes 等）不在時は常に dry-run（生成なし）。
  *      - --allow-overwrite 不在時は上書き禁止（CreateNew）。
  *
  * 7) 設計方針（Chapter と Arg の対応）
@@ -521,14 +533,14 @@ Specification Review Template
  *
  * 9) 受け入れ基準
  *    - ビルド成功（.NET 8.0）, 単体テストで安全規約をガード（ディレクトリ外拒否・上書き禁止等）。
- *    - dry-run が期待通りに差分を報告し、--confirm でのみ生成されること。
+ *    - dry-run が期待通りに差分を報告し、--allow-overwrite でのみ生成されること。
  *    - 禁止パターン検出なし（Shell連結, FileMode.Create 等）。
  *
  * 10) 例（ワンライナー）
- *    例: LissajousTool png -ax 3 -ay 2 --phase 30 -W 1200 -H 800 --fg #00FFFF --bg black -o .\out\classic.png --confirm
- *    例: LissajousTool gif -ax 5 -ay 7 --phase-sweep 0..360 --frames 180 --fps 30 --fg #FF6AFB --bg black -o .\out\spin.gif --confirm
- *    例: LissajousTool gif -ax 2 -ay 3 --duration 6 --amp-x-sweep 0.8..0.95 --amp-y-sweep 0.8..0.95 --dither on -o out\soft.gif --confirm
- *    例: LissajousTool png -ax 7 -ay 9 --samples 20000 --thickness 1.5 --antialias on -o .\out\hires.png --confirm
+ *    例: LissajousTool png -ax 3 -ay 2 --phase 30 -W 1200 -H 800 --fg #00FFFF --bg black -o .\out\classic.png -y
+ *    例: LissajousTool gif -ax 5 -ay 7 --phase-sweep 0..360 --frames 180 --fps 30 --fg #FF6AFB --bg black -o .\out\spin.gif -y
+ *    例: LissajousTool gif -ax 2 -ay 3 --duration 6 --amp-x-sweep 0.8..0.95 --amp-y-sweep 0.8..0.95 --dither on -o out\soft.gif -y
+ *    例: LissajousTool png -ax 7 -ay 9 --samples 20000 --thickness 1.5 --antialias on -o .\out\hires.png -y
  * =============================================================================
  */
 /* =============================================================================
@@ -537,7 +549,7 @@ Specification Review Template
  * 対象: 「コメント生成手順 1.」で合意した仕様（Usage/安全既定/Chapter分割/Arg IF方針 等）
  *
  * ## 1) Specification Compliance（規約順守）
- * - VeryVibe RULE（SOLID/Safety/最小特権/非破壊既定）: 概ね順守。破壊的操作は --confirm 必須、
+ * - VeryVibe RULE（SOLID/Safety/最小特権/非破壊既定）: 概ね順守。破壊的操作は -y/--yes（等）必須、
  *   上書きは --allow-overwrite 必須、dry-run 既定など安全側に倒している。OK。
  * - Chapter と Arg IF の関係: ParseArgs/Validate/Render/Encode/Write の各 Chapter に対応する
  *   Arg IF を想定し、RootArg が明示的実装で一元化する方針は明確。OK。
@@ -554,7 +566,7 @@ Specification Review Template
  * - ただし「ベースディレクトリ」の厳密定義（どこを基点とするか）は明文化要。TODO。
  *
  * ## 3) Consistency Check（一貫性）
- * - Usage例と要件の整合: 例コマンドは安全既定（--confirm 明示時のみ生成）と整合。OK。
+ * - Usage例と要件の整合: 例コマンドは安全既定（-y/--yes 明示時のみ生成）と整合。OK。
  * - 安全既定: dry-run既定、上書き禁止既定を全体で一貫して記述。OK。
  * - ロケール/出力形式: ユーザー向けは CurrentCulture、ログは Invariant/ISO 8601 の方針を記述。OK。
  * - GIF 時間指定: --fps と --duration はどちらか一方で可としたが、同時指定時の優先順位は未定義。TODO。
@@ -645,7 +657,7 @@ Specification Review Template
  * F) サイズ・安全上限・既定
  *   - --max-bytes 既定: 200_000_000 (約 200 MB)。超過見込み時は警告 → 既定では拒否。
  *   - 出力拡張子の許可: .png / .gif のみ。その他は拒否。
- *   - --dry-run は既定で有効。実生成には --confirm が必須。
+ *   - --dry-run は既定で有効。実生成には --allow-overwrite が必須。
  *
  * G) メタデータ鍵のポリシー
  *   - 許可キー例: Title, Author, Description, Software, Source, Comment, Copyright。
@@ -960,6 +972,14 @@ using LissajousTool.Abstractions;
 using LissajousTool.Chapters;
 using LissajousTool.Core;
 using Microsoft.Extensions.Logging;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Png.Chunks;
+using SixLabors.ImageSharp.Metadata;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -1178,7 +1198,7 @@ namespace LissajousTool.Abstractions
         /// <summary>プログラム名（ヘルプ表示用）。null/空は不可。</summary>
         string ProgramName { get; }
 
-        /// <summary>ドライラン（既定: true）。<c>--confirm</c> が無ければ常に <c>true</c>。</summary>
+        /// <summary>ドライラン（既定: true）。<c>--assume-yes</c> が無ければ常に <c>true</c>。</summary>
         bool IsDryRun { get; }
 
         /// <summary>実生成の明示フラグ。<c>true</c> の場合のみファイル生成を許可。</summary>
@@ -2083,7 +2103,7 @@ namespace LissajousTool.Chapters
                 // 3) 上書きポリシー
                 var exists = File.Exists(outputAbs);
                 if (exists && !(arg.AllowOverwrite && arg.IsConfirm))
-                    throw new IOException("既存ファイルが存在します。--allow-overwrite と --confirm の併用でのみ上書きを許可します。");
+                    throw new IOException("既存ファイルが存在します。--allow-overwrite と --assume-yes の併用でのみ上書きを許可します。");
 
                 // 4) GIF 時間パラメータの最終確定
                 (int frames, double fps, double durSec) = ResolveGifTiming(arg);
@@ -2102,7 +2122,7 @@ namespace LissajousTool.Chapters
                             if (arg.IsConfirm)
                                 _log.LogWarning("推定サイズ {Bytes:N0} が上限 {Max:N0} を超えています。失敗する可能性があります。", bytesEstimate, arg.MaxBytes);
                             else
-                                _log.LogInformation("dry-run: 推定サイズ {Bytes:N0} が上限 {Max:N0} を超えています。--confirm 前に見直しを推奨します。", bytesEstimate, arg.MaxBytes);
+                                _log.LogInformation("dry-run: 推定サイズ {Bytes:N0} が上限 {Max:N0} を超えています。--assume-yes 前に見直しを推奨します。", bytesEstimate, arg.MaxBytes);
                         }
                     }
                 }
@@ -2350,31 +2370,31 @@ namespace LissajousTool.Chapters
 
                 // --- 2) 曲線点群の生成 ----------------------------------------
                 var phaseRad = arg.PhaseDegrees * (Math.PI / 180.0);
-                var product = LissajousMath.BuildPolyline(
-                    width: arg.Width,
-                    height: arg.Height,
-                    margin: arg.Margin,
-                    ax: arg.AX,
-                    ay: arg.AY,
-                    ampX: arg.AmpX,
-                    ampY: arg.AmpY,
+                // ポリライン生成（CLI 指定を反映）
+                var poly = LissajousMath.BuildPolyline(
+                    width:   arg.Width,
+                    height:  arg.Height,
+                    margin:  arg.Margin,
+                    ax:      arg.AX,
+                    ay:      arg.AY,
+                    ampX:    arg.AmpX,
+                    ampY:    arg.AmpY,
                     phaseRad: phaseRad,
-                    samples: arg.Samples);
+                    samples: arg.Samples,
+                    thickness: Math.Clamp(arg.Thickness, 0.1, 256.0),
+                    antiAlias: arg.AntiAlias);
 
                 // ログ（ユーザー向け: CurrentCulture／詳細は構造化）
                 _log.LogInformation(
-                    "Render: 点群生成 {Count} 点完了。canvas={W}x{H}, margin={M}, freq=({AX},{AY}), amp=({AmpX},{AmpY}), phase={Phase}deg",
-                    product.Points.Length,
-                    arg.Width, arg.Height,
-                    arg.Margin,
-                    arg.AX, arg.AY,
-                    arg.AmpX.ToString("N", CultureInfo.CurrentCulture),
-                    arg.AmpY.ToString("N", CultureInfo.CurrentCulture),
-                    arg.PhaseDegrees.ToString("N", CultureInfo.CurrentCulture));
+                    "Render: 点群生成 {Count} 点完了。canvas={W}x{H}, margin={M}, freq=({Ax},{Ay}), amp=({Axv:N2},{Ayv:N2}), phase={PhaseDeg:N2}deg, thickness={T}, aa={AA}",
+                    poly.Points.Length, arg.Width, arg.Height, arg.Margin,
+                    arg.AX, arg.AY, arg.AmpX, arg.AmpY, arg.PhaseDegrees,
+                    arg.Thickness, arg.AntiAlias
+                );
 
                 // --- 3) 次段へ橋渡し ------------------------------------------
                 // Encode には IEncodeArg として渡し、同梱の RenderProduct はアダプタ経由で参照可能。
-                var encodeAdapter = new EncodeInputAdapter(arg, product);
+                var encodeAdapter = new EncodeInputAdapter(arg, poly);
                 buffer.PushBack(new ChapterContext<IEncodeArg>(new EncodeChapter(_logFactory), encodeAdapter));
             }
             catch (Exception ex)
@@ -2660,7 +2680,7 @@ namespace LissajousTool.Chapters
         {
             _logFactory = logFactory ?? throw new ArgumentNullException(nameof(logFactory));
             _log = logFactory.CreateLogger<EncodeChapter>();
-            _engine = engine ?? new NotConfiguredEncoderEngine();
+            _engine = engine ?? new ImageSharpEncoderEngine();
         }
 
         public void Handle(IEncodeArg arg, IContextBuffer<IEncodeArg> buffer)
@@ -2926,6 +2946,171 @@ namespace LissajousTool.Chapters
             }
             return list;
         }
+
+        // --- engine ----------------------------------------------------
+        internal sealed class ImageSharpEncoderEngine : IImageEncoderEngine
+        {
+            public ReadOnlyMemory<byte> EncodePng(PngEncodeRequest request)
+            {
+                var bg = ParseColor(request.Background);
+                var fg = ParseColor(request.Foreground);
+
+                using var img = new Image<Rgba32>(request.Width, request.Height, bg);
+                SetResolution(img.Metadata, request.Dpi);
+                TryApplyPngText(img.Metadata, request.Metadata);
+
+                // 線を描く
+                DrawPolyline(img, request.Polyline, fg);
+
+                var encoder = new PngEncoder
+                {
+                    // enum へのキャストが必要
+                    CompressionLevel = (PngCompressionLevel)Clamp(request.CompressLevel, 0, 9),
+                    FilterMethod = MapFilter(request.Filter)
+                };
+
+                using var ms = new MemoryStream(capacity: Math.Max(1024, request.Width * request.Height / 2));
+                img.Save(ms, encoder);
+                return new ReadOnlyMemory<byte>(ms.ToArray());
+            }
+
+            public ReadOnlyMemory<byte> EncodeGif(GifEncodeRequest request)
+            {
+                var bg = ParseColor(request.Background);
+                var fg = ParseColor(request.Foreground);
+
+                // フレーム遅延（1/100 秒単位）
+                int frameDelay = request.DelayMilliseconds is int delayMs && delayMs > 0
+                    ? Math.Max(1, (int)Math.Round(delayMs / 10.0))
+                    : Math.Max(1, (int)Math.Round(100.0 / Math.Max(0.0001, request.Fps)));
+
+                // 先頭フレーム
+                using var first = new Image<Rgba32>(request.Width, request.Height, bg);
+                SetResolution(first.Metadata, request.Dpi);
+                DrawPolyline(first, request.FramePolylines.Count > 0 ? request.FramePolylines[0] : EmptyPolyline(request), fg);
+                first.Frames.RootFrame.Metadata.GetGifMetadata().FrameDelay =
+                    (ushort)Math.Clamp(frameDelay, 1, ushort.MaxValue);
+
+                // ループ回数（0=無限）
+                var gifMeta = first.Metadata.GetGifMetadata();
+                gifMeta.RepeatCount = (ushort)Math.Clamp(request.LoopCount, 0, ushort.MaxValue);
+
+                // 2フレーム目以降
+                for (int i = 1; i < request.FramePolylines.Count; i++)
+                {
+                    using var frame = new Image<Rgba32>(request.Width, request.Height, bg);
+                    SetResolution(frame.Metadata, request.Dpi);
+                    DrawPolyline(frame, request.FramePolylines[i], fg);
+                    frame.Frames.RootFrame.Metadata.GetGifMetadata().FrameDelay =
+                        (ushort)Math.Clamp(frameDelay, 1, ushort.MaxValue);
+
+                    first.Frames.AddFrame(frame.Frames.RootFrame);
+                }
+
+                var encoder = new GifEncoder
+                {
+                    // 量子化/ディザの詳細指定は後続で拡張可能（まずは既定）
+                    ColorTableMode = GifColorTableMode.Local
+                };
+
+                using var ms = new MemoryStream(capacity: request.Width * request.Height);
+                first.Save(ms, encoder);
+                return new ReadOnlyMemory<byte>(ms.ToArray());
+            }
+
+            // ---------------- helpers ----------------
+
+            private static void DrawPolyline(Image<Rgba32> img, RenderProduct poly, Rgba32 fg)
+            {
+                if (poly.Points is null || poly.Points.Length < 2) return;
+
+                var pts = new SixLabors.ImageSharp.PointF[poly.Points.Length];
+                for (int i = 0; i < pts.Length; i++)
+                {
+                    var p = poly.Points[i];
+                    pts[i] = new SixLabors.ImageSharp.PointF(p.X, p.Y);
+                }
+
+                var color = SixLabors.ImageSharp.Color.FromRgba(fg.R, fg.G, fg.B, fg.A);
+                var thickness = (float)Math.Max(0.1, poly.Thickness);
+
+                // AA の有無をこの描画オペレーションだけに適用
+                img.Mutate(ctx =>
+                    ctx.SetGraphicsOptions(new GraphicsOptions { Antialias = poly.AntiAlias })
+                       .DrawLine(color, thickness, pts) // DrawLines ではなく DrawLine を使用してもOK
+                );
+            }
+
+            private static RenderProduct EmptyPolyline(GifEncodeRequest req)
+                => new RenderProduct(Array.Empty<PixelF>(), 1.0, true);
+
+            private static void SetResolution(ImageMetadata meta, int dpi)
+            {
+                var d = Math.Max(1, dpi);
+                meta.HorizontalResolution = d;
+                meta.VerticalResolution = d;
+                meta.ResolutionUnits = PixelResolutionUnit.PixelsPerInch;
+            }
+
+            private static void TryApplyPngText(ImageMetadata meta, IReadOnlyList<KeyValuePair<string, string>> kvs)
+            {
+                if (kvs is null || kvs.Count == 0) return;
+                var png = meta.GetPngMetadata();
+                foreach (var kv in kvs)
+                {
+                    var key = kv.Key ?? string.Empty;
+                    var val = kv.Value ?? string.Empty;
+                    if (key.Length == 0 || val.Length == 0) continue;
+                    // tEXt チャンクとして格納（言語/翻訳は未使用）
+                    png.TextData.Add(new PngTextData(key, val, string.Empty, string.Empty));
+                }
+            }
+
+            private static PngFilterMethod MapFilter(PngFilterStrategy s) => s switch
+            {
+                PngFilterStrategy.None => PngFilterMethod.None,
+                PngFilterStrategy.Sub => PngFilterMethod.Sub,
+                PngFilterStrategy.Up => PngFilterMethod.Up,
+                PngFilterStrategy.Avg => PngFilterMethod.Average,
+                PngFilterStrategy.Paeth => PngFilterMethod.Paeth,
+                _ => PngFilterMethod.Adaptive, // Auto
+            };
+
+            private static int Clamp(int v, int lo, int hi) => v < lo ? lo : (v > hi ? hi : v);
+
+            private static Rgba32 ParseColor(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return new Rgba32(0, 0, 0);
+
+                var t = s.Trim();
+                if (t.StartsWith("#", StringComparison.Ordinal))
+                {
+                    // #RRGGBB のみ（簡易実装）
+                    if (t.Length == 7 &&
+                        byte.TryParse(t.AsSpan(1, 2), System.Globalization.NumberStyles.HexNumber, null, out var r) &&
+                        byte.TryParse(t.AsSpan(3, 2), System.Globalization.NumberStyles.HexNumber, null, out var g) &&
+                        byte.TryParse(t.AsSpan(5, 2), System.Globalization.NumberStyles.HexNumber, null, out var b))
+                    {
+                        return new Rgba32(r, g, b, 255);
+                    }
+                }
+
+                // 簡易名前解決（最低限）
+                return t.ToLowerInvariant() switch
+                {
+                    "white" => new Rgba32(255, 255, 255, 255),
+                    "black" => new Rgba32(0, 0, 0, 255),
+                    "red" => new Rgba32(255, 0, 0, 255),
+                    "green" => new Rgba32(0, 128, 0, 255),
+                    "blue" => new Rgba32(0, 0, 255, 255),
+                    "cyan" => new Rgba32(0, 255, 255, 255),
+                    "magenta" => new Rgba32(255, 0, 255, 255),
+                    "yellow" => new Rgba32(255, 255, 0, 255),
+                    "gray" or "grey" => new Rgba32(128, 128, 128, 255),
+                    _ => new Rgba32(0, 0, 0, 255)
+                };
+            }
+        }
     }
 
     internal sealed class WriteChapter : IChapter<IWriteArg>
@@ -2947,7 +3132,7 @@ namespace LissajousTool.Chapters
                 if (arg is not IEncodedBinaryAccessor binAcc)
                     throw new InvalidOperationException("エンコード済みデータが見つかりません（IEncodedBinaryAccessor が見当たりません）。");
 
-                // 1) dry-run / confirm ポリシー
+                // 1) dry-run / assume-yes ポリシー
                 if (!arg.IsConfirm)
                 {
                     _log.LogInformation("dry-run: {Bytes} bytes を書き込まず終了します。出力先: {Path}",
@@ -2969,7 +3154,7 @@ namespace LissajousTool.Chapters
                 // 4) 既存ファイルの扱い（最終チェック / TOCTOU 突破防止）
                 var exists = File.Exists(finalPath);
                 if (exists && !arg.AllowOverwrite)
-                    throw new IOException("既存ファイルが存在します。--allow-overwrite と --confirm の併用でのみ上書きを許可します。");
+                    throw new IOException("既存ファイルが存在します。--allow-overwrite と --assume-yes の併用でのみ上書きを許可します。");
 
                 // 5) 出力ディレクトリの作成（原子的 Move のため同一ディレクトリ配下）
                 Directory.CreateDirectory(finalDir);
@@ -3113,14 +3298,23 @@ namespace LissajousTool
         public static int Main(string[] args)
         {
             var programName = GetProgramName();
-            if (args.Length == 0 || HasFlag(args, "--help") || HasFlag(args, "-h"))
+            if (args.Length == 0 || HasFlagExact(args, "--help") || HasFlagExact(args, "-h"))
             {
                 Console.WriteLine(Usage(programName));
                 return 0;
             }
 
+            // --- 廃止済みフラグの早期検出 ---
+            // 旧 --confirm はサポート終了。指定があれば即エラー終了する。
+            if (HasFlagExact(args, "--confirm"))
+            {
+                Console.Error.WriteLine("--confirm は廃止されました。代わりに -y/--yes（--assume-yes, --no-dry-run, --write）を使用してください。");
+                return 2;
+            }
+
             try
             {
+
                 // ---------------------------------------------
                 // 1) サブコマンド判定（png|gif）とトークン開始位置
                 // ---------------------------------------------
@@ -3134,6 +3328,19 @@ namespace LissajousTool
                 //    - --metadata は複数指定可
                 // ---------------------------------------------
                 var parsed = ParseArgs(args, start);
+
+                // “安全側”の既定（dry-run=true）。
+                var isDryRun = parsed.GetBool("dry-run", true);
+
+                // 明示的に「承認済み」と見なすフラグ群。存在すれば dry-run を落とす。
+                var assumeYes =
+                    parsed.HasShort('y') ||
+                    parsed.GetBool("yes") ||
+                    parsed.GetBool("assume-yes") ||
+                    parsed.GetBool("no-dry-run") ||
+                    parsed.GetBool("write");
+                if (assumeYes) isDryRun = false;
+                var allowOverwrite = parsed.GetBool("allow-overwrite");
 
                 // ---------------------------------------------
                 // 3) 値の取り出し（未指定は安全な既定値）
@@ -3156,12 +3363,6 @@ namespace LissajousTool
                 var seed = parsed.GetNullableInt("seed");
                 var verbose = parsed.GetBool("verbose") || parsed.HasShort('v');
                 var quiet = parsed.GetBool("quiet") || parsed.HasShort('q');
-
-                // “安全側”の既定（dry-run=true）。--confirm で上書き意志を明確化すると dry-run を落とす
-                var isDryRun = parsed.GetBool("dry-run", true);
-                var isConfirm = parsed.GetBool("confirm") || parsed.HasShort('y');
-                if (isConfirm) isDryRun = false;
-                var allowOverwrite = parsed.GetBool("allow-overwrite");
 
                 // Lissajous パラメータ
                 var ax = parsed.GetInt("ax", 3);
@@ -3202,7 +3403,7 @@ namespace LissajousTool
                     // 共通
                     programName: programName,
                     isDryRun: isDryRun,
-                    isConfirm: isConfirm,
+                    isConfirm: assumeYes,
                     allowOverwrite: allowOverwrite,
                     maxBytes: maxBytes,
                     dpi: dpi,
@@ -3286,6 +3487,12 @@ namespace LissajousTool
                 // WriteChapter が終端。例外は Chapter 内で握りつぶす方針（RULE #13）
                 return 0;
             }
+            catch (ArgumentException ex)
+            {
+                // 使い手向けの短いメッセージだけ表示
+                Console.Error.WriteLine(ex.Message);
+                return 2;
+            }
             catch (Exception ex)
             {
                 // 最上位の想定外エラー（Parse 前など）。詳細は出さずに終了コードのみ。
@@ -3298,7 +3505,7 @@ namespace LissajousTool
         // Usage（簡易表示版）
         // ---------------------------------------------------------------------
         private static string Usage(string prog) =>
-$@"Usage:
+        $@"Usage:
   {prog} png [OPTIONS] -o out.png
   {prog} gif [OPTIONS] -o out.gif
   {prog} --help
@@ -3341,10 +3548,15 @@ GIF:
   -v, --verbose                詳細ログ
   -q, --quiet                  静穏モード
   -n, --dry-run                ドライラン（既定:ON）
-  -y, --confirm                実書き込みを許可（dry-run を解除）
+  -y, --yes, --assume-yes      実書き込みを許可（dry-run を解除）
+      --no-dry-run             同上（別名）
+      --write                  同上（別名）
       --allow-overwrite        上書き許可（既定:OFF）
 ";
 
+        // ---------------------------------------------------------------------
+        // プログラム名解決（例外安全）
+        // ---------------------------------------------------------------------
         private static string GetProgramName()
         {
             try
@@ -3353,40 +3565,67 @@ GIF:
                 var n = Path.GetFileNameWithoutExtension(p);
                 return string.IsNullOrWhiteSpace(n) ? "lissajous" : n;
             }
-            catch { return "lissajous"; }
+            catch
+            {
+                return "lissajous";
+            }
         }
 
         // ---------------------------------------------------------------------
-        // メタデータ正規化
+        // メタデータ正規化（厳格検証付き）
         // ---------------------------------------------------------------------
+        // 仕様：key は ^[A-Za-z0-9._-]{1,64}$、value は 1..8192 文字、制御文字不可、\n\n\n 連続不可
+        private static readonly Regex _metaKeyRegex = new(@"^[A-Za-z0-9._-]{1,64}$", RegexOptions.Compiled);
+
         private static IReadOnlyList<KeyValuePair<string, string>> NormalizeMetadata(IReadOnlyList<string> raws)
         {
+            if (raws is null || raws.Count == 0) return Array.Empty<KeyValuePair<string, string>>();
+
             var list = new List<KeyValuePair<string, string>>(raws.Count);
             foreach (var r in raws)
             {
-                if (string.IsNullOrWhiteSpace(r)) continue;
+                if (string.IsNullOrWhiteSpace(r))
+                    throw new ArgumentException("metadata に空要素を指定することはできません。'key=value' 形式で指定してください。");
+
                 var i = r.IndexOf('=', StringComparison.Ordinal);
-                if (i <= 0) continue;
+                if (i <= 0)
+                    throw new ArgumentException($"metadata '{r}' は 'key=value' 形式ではありません。");
+
                 var key = r[..i].Trim();
-                var val = (i + 1 < r.Length) ? r[(i + 1)..] : "";
-                if (key.Length == 0) continue;
+                var val = (i + 1 < r.Length) ? r[(i + 1)..] : string.Empty;
+
+                if (!_metaKeyRegex.IsMatch(key))
+                    throw new ArgumentException($"metadata のキー '{key}' は許可された形式ではありません。");
+
+                if (val.Length == 0 || val.Length > 8192)
+                    throw new ArgumentException($"metadata '{key}' の値長が不正です（1..8192 文字）。");
+
+                foreach (var ch in val)
+                {
+                    if ((ch >= '\u0000' && ch <= '\u001F') || ch == '\u007F')
+                        throw new ArgumentException($"metadata '{key}' の値に制御文字を含めることはできません。");
+                }
+                if (val.Contains("\n\n\n", StringComparison.Ordinal))
+                    throw new ArgumentException($"metadata '{key}' の値に改行の連続（3回以上）は許可されません。");
+
                 list.Add(new KeyValuePair<string, string>(key, val));
             }
             return list;
         }
 
         // ---------------------------------------------------------------------
-        // 簡易 CLI パーサ
+        // 簡易 CLI パーサ（厳格：未知/位置引数は即エラー、値必須/不可を厳密判定）
         // ---------------------------------------------------------------------
         private sealed class Parsed
         {
-            private readonly Dictionary<string, string> _single = new(StringComparer.OrdinalIgnoreCase);
-            private readonly Dictionary<string, List<string>> _multi = new(StringComparer.OrdinalIgnoreCase);
+            private readonly Dictionary<string, string> _single = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, List<string>> _multi = new(StringComparer.Ordinal);
             private readonly HashSet<char> _shortFlags = new();
+
             public string? OutputPath { get; internal set; }
+            public bool DeprecatedConfirmUsed { get; internal set; }
 
             public bool HasShort(char c) => _shortFlags.Contains(c);
-
             public string? TryGet(string key) => _single.TryGetValue(key, out var v) ? v : null;
 
             public IReadOnlyList<string> GetAll(string key) =>
@@ -3399,16 +3638,21 @@ GIF:
                 return v.Equals("1") || v.Equals("true", StringComparison.OrdinalIgnoreCase) || v.Equals("on", StringComparison.OrdinalIgnoreCase);
             }
 
-            public int GetInt(string key, int def) => int.TryParse(TryGet(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : def;
-            public long GetLong(string key, long def) => long.TryParse(TryGet(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : def;
-            public double GetDouble(string key, double def) => double.TryParse(TryGet(key), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ? x : def;
+            public int GetInt(string key, int def) =>
+                int.TryParse(TryGet(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : def;
+            public long GetLong(string key, long def) =>
+                long.TryParse(TryGet(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : def;
+            public double GetDouble(string key, double def) =>
+                double.TryParse(TryGet(key), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ? x : def;
 
-            public int? GetNullableInt(string key) => int.TryParse(TryGet(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : null;
-            public double? GetNullableDouble(string key) => double.TryParse(TryGet(key), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ? x : null;
+            public int? GetNullableInt(string key) =>
+                int.TryParse(TryGet(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : null;
+            public double? GetNullableDouble(string key) =>
+                double.TryParse(TryGet(key), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ? x : null;
 
             public void AddSingle(string key, string? value)
             {
-                if (key is null) return;
+                if (string.IsNullOrEmpty(key)) return;
                 _single[key] = value ?? string.Empty;
             }
 
@@ -3427,157 +3671,190 @@ GIF:
 
         private static Parsed ParseArgs(string[] args, int startIndex)
         {
+            if (args is null) throw new ArgumentNullException(nameof(args));
+            if (startIndex < 0 || startIndex > args.Length) throw new ArgumentOutOfRangeException(nameof(startIndex));
+
+            // 値必須の長オプション
+            var needValue = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "output","width","height","ext","out-dir",
+        "ax","ay","phase","amp-x","amp-y","samples","thickness","margin",
+        "background","foreground",
+        "png-compress","png-filter",
+        "gif-frames","gif-fps","gif-duration","gif-delay-ms","gif-loop","gif-quantize","gif-palette",
+        "metadata","max-bytes","dpi","culture","seed",
+    };
+            // 値不要の長オプション（フラグ）
+            var noValue = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "antialias","gif-dither","verbose","quiet","dry-run",
+        "yes","assume-yes","no-dry-run","write","allow-overwrite",
+        // 否定形対応（--no-xxx）は個別検証で remainder がこの集合に在籍している必要あり
+    };
+            // エイリアス（標準化）
+            string NormalizeKey(string k) => k switch
+            {
+                "bg" => "background",
+                "fg" => "foreground",
+                _ => k
+            };
+
             var p = new Parsed();
+            var stray = new List<string>();
 
-            // 短縮キーの値を取るもの
-            static bool NeedsValueShort(char c) => c is 'o' or 'W' or 'H';
-
-            for (int i = startIndex; i < args.Length; i++)
+            for (int i = startIndex; i < args.Length;)
             {
                 var a = args[i];
 
+                // ---- 長オプション
                 if (a.StartsWith("--", StringComparison.Ordinal))
                 {
-                    // --key=value | --key value | --flag
-                    var s = a[2..];
-                    var eq = s.IndexOf('=');
-                    string key;
-                    string? val = null;
+                    var span = a.AsSpan(2);
+                    var eq = span.IndexOf('=');
+                    string rawKey, val = string.Empty;
 
                     if (eq >= 0)
                     {
-                        key = s[..eq];
-                        val = s[(eq + 1)..];
+                        rawKey = span[..eq].ToString();
+                        val = span[(eq + 1)..].ToString();
+                        i += 1;
                     }
                     else
                     {
-                        key = s;
-                        // boolean の否定系: --no-xxx
-                        if (key.StartsWith("no-", StringComparison.Ordinal))
+                        rawKey = span.ToString();
+                        i += 1;
+                    }
+
+                    // 否定形（--no-xxx）
+                    if (rawKey.StartsWith("no-", StringComparison.Ordinal))
+                    {
+                        var baseKey = NormalizeKey(rawKey[3..]);
+                        if (!noValue.Contains(baseKey))
+                            throw new ArgumentException($"フラグ '--{rawKey}' は無効です。'--{baseKey}' がフラグとして定義されている場合のみ '--no-{baseKey}' を使用できます。");
+                        if (eq >= 0 && val.Length > 0)
+                            throw new ArgumentException($"フラグ '--{rawKey}' に値は指定できません。");
+                        p.AddSingle(baseKey, "false");
+                        continue;
+                    }
+
+                    var key = NormalizeKey(rawKey);
+
+                    // 未知キー即エラー
+                    if (!needValue.Contains(key) && !noValue.Contains(key))
+                        throw new ArgumentException($"未知のオプション '--{rawKey}' が指定されました。--help を参照してください。");
+
+                    if (needValue.Contains(key))
+                    {
+                        if (eq < 0)
                         {
-                            p.AddSingle(key[3..], "false");
-                            continue;
+                            // 次トークンを値として必須取得
+                            if (i < args.Length && !args[i].StartsWith("-", StringComparison.Ordinal))
+                            {
+                                val = args[i];
+                                i += 1;
+                            }
+                            else
+                            {
+                                throw new ArgumentException($"オプション '--{key}' には値が必要です。");
+                            }
                         }
-                        // 値を取るキーワード（代表的なもの）
-                        if (i + 1 < args.Length && !args[i + 1].StartsWith("-", StringComparison.Ordinal))
+
+                        if (key == "output") p.OutputPath = val;
+                        if (key == "metadata")
                         {
-                            val = args[++i];
+                            // metadata は複数回許容
+                            p.AddMulti("metadata", val);
                         }
                         else
                         {
-                            // 値なし → true 扱い
-                            val = string.Empty;
+                            p.AddSingle(key, val);
                         }
                     }
-
-                    switch (key)
+                    else
                     {
-                        case "output": p.OutputPath = val!; p.AddSingle("output", val); break;
-                        case "width": p.AddSingle("width", val); break;
-                        case "height": p.AddSingle("height", val); break;
-                        case "ext": p.AddSingle("ext", val); break;
-                        case "out-dir": p.AddSingle("out-dir", val); break;
-
-                        case "ax": p.AddSingle("ax", val); break;
-                        case "ay": p.AddSingle("ay", val); break;
-                        case "phase": p.AddSingle("phase", val); break;
-                        case "amp-x": p.AddSingle("amp-x", val); break;
-                        case "amp-y": p.AddSingle("amp-y", val); break;
-                        case "samples": p.AddSingle("samples", val); break;
-                        case "thickness": p.AddSingle("thickness", val); break;
-                        case "antialias": p.AddSingle("antialias", val); break;
-                        case "margin": p.AddSingle("margin", val); break;
-
-                        case "png-compress": p.AddSingle("png-compress", val); break;
-                        case "png-filter": p.AddSingle("png-filter", val); break;
-
-                        case "gif-frames": p.AddSingle("gif-frames", val); break;
-                        case "gif-fps": p.AddSingle("gif-fps", val); break;
-                        case "gif-duration": p.AddSingle("gif-duration", val); break;
-                        case "gif-delay-ms": p.AddSingle("gif-delay-ms", val); break;
-                        case "gif-loop": p.AddSingle("gif-loop", val); break;
-                        case "gif-quantize": p.AddSingle("gif-quantize", val); break;
-                        case "gif-palette": p.AddSingle("gif-palette", val); break;
-                        case "gif-dither": p.AddSingle("gif-dither", val); break;
-
-                        case "metadata":
-                            if (!string.IsNullOrEmpty(val)) p.AddMulti("metadata", val!);
-                            break;
-
-                        case "max-bytes": p.AddSingle("max-bytes", val); break;
-                        case "dpi": p.AddSingle("dpi", val); break;
-                        case "culture": p.AddSingle("culture", val); break;
-                        case "seed": p.AddSingle("seed", val); break;
-
-                        case "verbose": p.AddSingle("verbose", val); break;
-                        case "quiet": p.AddSingle("quiet", val); break;
-                        case "dry-run": p.AddSingle("dry-run", val); break;
-                        case "confirm": p.AddSingle("confirm", val); break;
-                        case "allow-overwrite": p.AddSingle("allow-overwrite", val); break;
-
-                        default:
-                            // 未知の --key は無視（ValidateChapter で最終検証）
-                            break;
+                        // 値不要フラグ： --flag=value を禁止
+                        if (eq >= 0 && val.Length > 0)
+                            throw new ArgumentException($"フラグ '--{key}' に値は指定できません。");
+                        p.AddSingle(key, ""); // presence = true
                     }
+
+                    continue;
                 }
-                else if (a.StartsWith("-", StringComparison.Ordinal))
+
+                // ---- 短縮オプション（複合 -vqy 等）
+                if (a.StartsWith("-", StringComparison.Ordinal) && a.Length >= 2)
                 {
-                    // 短縮オプションの合成 -vn など（値が必要なものは直後 or 同一トークン）
-                    var shorts = a[1..];
+                    var shorts = a.AsSpan(1);
                     for (int j = 0; j < shorts.Length; j++)
                     {
                         var c = shorts[j];
-                        if (NeedsValueShort(c))
+                        switch (c)
                         {
-                            string? val = null;
-                            // 同一トークン内の残りを値と解釈（例: -W1024）
-                            if (j + 1 < shorts.Length)
-                            {
-                                val = shorts[(j + 1)..];
-                                j = shorts.Length; // 残り消費
-                            }
-                            else if (i + 1 < args.Length)
-                            {
-                                val = args[++i];
-                            }
+                            // 値必須：-oPath / -o Path / -W1024 / -H 2048
+                            case 'o':
+                            case 'W':
+                            case 'H':
+                                {
+                                    string val;
+                                    if (j + 1 < shorts.Length)
+                                    {
+                                        val = shorts[(j + 1)..].ToString();
+                                        j = shorts.Length; // 残り消費
+                                    }
+                                    else
+                                    {
+                                        if (i + 1 >= args.Length || args[i + 1].StartsWith("-", StringComparison.Ordinal))
+                                            throw new ArgumentException($"短縮オプション '-{c}' には値が必要です。");
+                                        val = args[i + 1];
+                                        i += 1; // 値トークン消費
+                                    }
 
-                            if (string.IsNullOrEmpty(val)) continue;
+                                    if (c == 'o') { p.OutputPath = val; p.AddSingle("output", val); }
+                                    else if (c == 'W') { p.AddSingle("width", val); }
+                                    else { p.AddSingle("height", val); }
+                                    break;
+                                }
 
-                            switch (c)
-                            {
-                                case 'o': p.OutputPath = val; p.AddSingle("output", val); break;
-                                case 'W': p.AddSingle("width", val); break;
-                                case 'H': p.AddSingle("height", val); break;
-                            }
-                        }
-                        else
-                        {
-                            switch (c)
-                            {
-                                case 'v': p.AddShortFlag('v'); p.AddSingle("verbose", ""); break;
-                                case 'q': p.AddShortFlag('q'); p.AddSingle("quiet", ""); break;
-                                case 'y': p.AddShortFlag('y'); p.AddSingle("confirm", ""); break;
-                                case 'n': p.AddSingle("dry-run", ""); break;
-                                default: break; // 未知は無視
-                            }
+                            case 'v': p.AddShortFlag('v'); p.AddSingle("verbose", ""); break;
+                            case 'q': p.AddShortFlag('q'); p.AddSingle("quiet", ""); break;
+                            case 'y': p.AddShortFlag('y'); p.AddSingle("yes", ""); break;
+                            case 'n': p.AddShortFlag('n'); p.AddSingle("dry-run", ""); break;
+
+                            default:
+                                throw new ArgumentException($"未知の短縮オプション '-{c}' が指定されました。--help を参照してください。");
                         }
                     }
+
+                    i += 1; // 短縮オプションのトークン消費
+                    continue;
                 }
-                else
-                {
-                    // 位置引数 → 出力パスとして扱う（先着）
-                    if (p.OutputPath is null) p.OutputPath = a;
-                }
+
+                // ---- 位置引数：全面禁止（出力は必ず -o/--output）
+                stray.Add(a);
+                i += 1;
+            }
+
+            if (stray.Count > 0)
+            {
+                var msg =
+                    "不明な位置引数が指定されました: " + string.Join(" ", stray) + Environment.NewLine +
+                    "ヒント: 先頭にサブコマンド（png|gif）を置き、残りはすべてオプション形式で指定してください。" + Environment.NewLine +
+                    "出力先は -o/--output で与える必要があります。";
+                throw new ArgumentException(msg);
             }
 
             return p;
         }
 
-        private static bool HasFlag(string[] args, string flag)
+        // ---------------------------------------------------------------------
+        // ヘルプ判定（完全一致・大小区別）
+        // ---------------------------------------------------------------------
+        private static bool HasFlagExact(string[] args, string flag)
         {
-            foreach (var a in args)
+            for (int i = 0; i < args.Length; i++)
             {
-                if (string.Equals(a, flag, StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(args[i], flag, StringComparison.Ordinal))
+                    return true;
             }
             return false;
         }

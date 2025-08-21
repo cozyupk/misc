@@ -8,6 +8,7 @@
 	<ItemGroup>
 		<!-- 画像処理（必須） -->
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.*" />
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
 		<!-- 線や図形を ImageSharp で描く場合のみ（必要時に有効化）
      <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="*"/> -->
 		<!-- CLI（必須） -->
