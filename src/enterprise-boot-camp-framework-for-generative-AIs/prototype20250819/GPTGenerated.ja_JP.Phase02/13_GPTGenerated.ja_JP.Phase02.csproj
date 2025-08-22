@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<EnableDefaultItems>false</EnableDefaultItems>
+		<RootNamespace>LissajousTool</RootNamespace>
+		<AssemblyName>LissajousTool</AssemblyName>
+		<LangVersion>preview</LangVersion>
+		<NoWarn>$(NoWarn);IDE0130</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Include="Example01.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- CLI パーサ（候補B） -->
+		<PackageReference Include="CommandLineParser" Version="2.9.1" />
+		<!-- 画像描画 / エンコード -->
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+		<!-- ロギング最小構成 -->
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+	</ItemGroup>
+</Project>
