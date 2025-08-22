@@ -16,7 +16,7 @@ _ = "When using vibe coding with ChatGPT, it is recommended to enter the followi
 _ = "Additionally, optionally, you may also enter a prompt like the following at the same time (modify to taste).";
 /*
 From the next prompt onward, please internally review yourself three times before outputting: the final result plus instructions for the user on how to verify it, plus a QA checklist with all yes answers, plus a summary of three self-review points.
-Use a gentle tone, like a kind doctor explaining while empathizing with the user.
+Use a gentle, empathetic, and reassuring tone, like a kind doctor carefully guiding the user.
 */
 _ = "After that, let’s define what to create by uploading this file and using a prompt like the following (the example below is just that; adjust it according to your goals).";
 /*
@@ -41,7 +41,7 @@ Please also include the Usage-like explanation you proposed earlier. Also, outpu
 */
 _ = @"You can advance vibe coding by pasting the comments and code output by ChatGPT into this file and, in your next prompt, prompting with ""Please carry out ○○ Step ○"" while uploading the updated file again.
       In this way, carry out Comment Generation Steps 1 through 6, and then proceed in order with Code Generation Step 1 and onward.
-      Repeat Code Generation Step 4 until ChatGPT outputs ""No items.""
+      Repeat Code Generation Step 5 until ChatGPT outputs ""No items.""
       At each stage, if compilation errors or warnings occur, either fix them and provide feedback to GPT, or if necessary provide GPT with screenshots and source code and ask for fixes.";
 }}}
 // --- END For Users ---
@@ -56,7 +56,7 @@ _ = @"You can advance vibe coding by pasting the comments and code output by Cha
    (Note) Rule #3 is particularly prone to misinterpretation by generative AI, so pay extra attention.
    1. Divide the source code into appropriate phases, giving each “Chapter” an independent function. Keep the Main method short. To achieve this, prepare independent chapters for parsing command‑line parameters and for pre‑processing various I/O operations.
    2. Classes implementing each Chapter must implement IChapter and depend only on the minimum necessary role interfaces.
-   3. To satisfy the contravariance of the type parameters of IChapter and IChapterContext, the inheritance chain should be such that the upstream (closer to input) side inherits the role interfaces of the downstream (closer to output) side, thereby becoming “more specific.” Maintain consistency that “Upstream interfaces inherit downstream interfaces (general → specific).”
+   3. To satisfy the contravariance of the type parameters of IChapter and IChapterContext, the inheritance chain should be such that the upstream (closer to input) side inherits the role interfaces of the downstream (closer to output) side, thereby becoming “more specialized.” Maintain consistency that “Upstream interfaces inherit downstream interfaces (general → specific).”
      Example (general → specific): VeryVibe.IArg ← IProcessingArg ← IParseArgsArg
      * At runtime, due to the contravariant nature of `IChapter<in TArg>`, a Chapter that processes downstream can safely accept its parent, the “more specific” upstream interface (i.e., the actual Arg). See the VeryVibe.ContravarianceExample below. (This file is a .cs file, and it has been confirmed to compile and operate as intended.)
 */
@@ -74,7 +74,7 @@ _ = @"You can advance vibe coding by pasting the comments and code output by Cha
 // - Do not refer to RootArg directly (always access via a role interface).
 // - Do not repack and pass new instances between chapters (inheritance of default/allowed state would be broken).
 // - Do not swap the in/out of IContextBuffer<out T> / IChapterContext<in T>.
-//    (Input (−) × IChapterContext<in T>(−) = covariance (+); this ensures type safety for PushBack.)
+//    (because contravariance (−) combined with contravariance (−) results in covariance (+), ensuring type safety for PushBack.)
 // ============================================================================
 
 namespace VeryVibe.UsageExample
@@ -250,7 +250,7 @@ namespace VeryVibe.UsageExample
             }
             else
             {
-                // Branch: this is a functional branch, not just a skip, so route to sibling interfaces
+                // Branch: this is a functional branch, not just a skip, so route to the appropriate branch interface
                 if (arg.IsCultureSet)
                 {
                     buffer.PushBack(new ChapterContext<IWorldWithCultureArg>(new WorldWithCultureChapter(), arg));
@@ -531,7 +531,7 @@ RULE: Absolute reference for definitions in the VeryVibe namespace (IChapter/ICo
       - The following types must not be newly defined on the application/function side (e.g., VeryVibe.Cal):
           interface IArg
           interface IChapter<in TArg>
-          interface IContextBufferr<out TArg>
+          interface IContextBuffer<out TArg>
           interface IChapterContext<in TArg>
       - Declaring types with the same name/meaning in another namespace (shadow definitions) is also prohibited.
 

@@ -12,7 +12,7 @@
 // intended for research, learning, and the joint evolution of humanity and generative AI.
 
 // --- ユーザー向け ---
-namespace ForUser { class Exalanation { public static void Dummy() { 
+namespace ForUser { class Explanation { public static void Dummy() { 
 
 _ = "ChatGPT とのバイブコーディングで利用する場合は、チャットの冒頭で次のプロンプトを入力することを推奨します。";
 /*
@@ -49,7 +49,7 @@ _ = @"あなたはこのファイルにChatGPTが出力したコメントやコ�
       更新したファイルを再度アップロードしつつ、「〇〇手順〇を実施してください」とプロンプティングすることで、
       バイブコーディングを進めることができます。
       その形で コメント生成手順 1. ～ コメント生成手順 6. を実施し、その後、コード生成手順 1. 以降も順に実施していきます。
-      コード生成手順 4. は、ChatGPTが「対象なし」を出力するまで繰り返し実施します。
+      コード生成手順 5. は、ChatGPTが「対象なし」を出力するまで繰り返し実施します。
       各段階でコンパイルエラーや警告が発生した場合は、あなたが修正して GPT にフィードバックするか、
       必要があれば GPT にスクリーンショットとソースコードを提供し、修正を依頼してください。";
 }}}
