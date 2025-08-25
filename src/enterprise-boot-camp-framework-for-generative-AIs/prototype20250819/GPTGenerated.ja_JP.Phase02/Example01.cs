@@ -25,7 +25,7 @@ _ = "また、オプショナルですが、次のようなプロンプトを同
 口調は優しいお医者さんが、ユーザーに寄り添って説明するような感じでお願いします。
 */
 _ = "その後、このファイルをアップロードすると同時に、次のようなプロンプトで「作るもの」の定義をしていきましょう。（下記はあくまで例です。目的に応じて修正）";
-_ = "※ このプロンプトも含め、このプロンプト以降、VeryVibe_ja-JP.cs をアップロード/更新しながら進めていきます。";
+_ = "※ このプロンプトも含め、このプロンプト以降、ChapterVibe_ja-JP.cs をアップロード/更新しながら進めていきます。";
 /*
  Windows環境上のC#で、パラメータを指定してリサージュ曲線を描き .png ファイルとして保存するコンソールプログラムを書きたいです。
 また、アニメーションgif出力にも対応したいです。
@@ -56,9 +56,9 @@ _ = @"あなたはこのファイルにChatGPTが出力したコメントやコ�
 // --- END ユーザー向け ---
 
 /* --- 生成AI向け RULE ---
-   VeryVibe 名前空間は、VeryVibe フレームワークのコア機能を提供します。 
+   ChapterVibe 名前空間は、ChapterVibe フレームワークのコア機能を提供します。 
    コードを生成する際には、このコア機能を活用し、各 Chapter を SOLID 原則に準拠して実装してください。
-   VeryVibe.UsageExample 名前空間は使用例を示すためのものです。
+   ChapterVibe.UsageExample 名前空間は使用例を示すためのものです。
    また、RULE ブロックもコード生成後には削除してください（ただし最後に示す「RULE 保存方針」に従う場合を除く）。
   
    このファイル内のコードを生成・変更する際には以下のルールに従ってください。
@@ -67,15 +67,15 @@ _ = @"あなたはこのファイルにChatGPTが出力したコメントやコ�
    2. 各 Chapter を実装するクラスは IChapter を実装し、必要最小限の役割インタフェースにのみ依存すること。
    3. IChapter や IChapterContext の型引数の反変性を成立させるため、**上流（入力に近い）側は、下流（出力に近い）側の役割インタフェイスを継承して“より具体的”になる**継承鎖とする。
      「上流IF は下流IF を継承する（一般→具体）」で一貫させる。
-      例（一般 → 具体 の順）: VeryVibe.IArg ← IProcessingArg ← IParseArgsArg
+      例（一般 → 具体 の順）: ChapterVibe.IArg ← IProcessingArg ← IParseArgsArg
       ※ 実行時には、反変 `IChapter<in TArg>` の性質により、下流を処理する Chapter が、
-         その親である“より具体的な”上流IF（＝実際の Arg）を安全に受理できる。下記 VeryVibe.ContravarianceExample を参照。
+         その親である“より具体的な”上流IF（＝実際の Arg）を安全に受理できる。下記 ChapterVibe.ContravarianceExample を参照。
          (このファイルは .cs ファイルであり、コンパイルが通り、意図道理動作することを確認済です。)
 */
 // ============================================================================
-// VeryVibe.UsageExample （入れ替え候補サンプル / RULE準拠・XMLコメント付）
+// ChapterVibe.UsageExample （入れ替え候補サンプル / RULE準拠・XMLコメント付）
 // ---------------------------------------------------------------------------
-// このセクションは VeryVibe フレームワークの最小利用例（Hello → World/WorldWithCulture）です。
+// このセクションは ChapterVibe フレームワークの最小利用例（Hello → World/WorldWithCulture）です。
 // 重要:
 // - コード生成手順 4.（Main 実装以降）では **この UsageExample を削除または置き換え** してください（RULE 保存方針に従う）。
 // - Arg インタフェースは RULE #3 の反変方針（上流=具体 ← 下流=一般を継承）に従います。
@@ -89,11 +89,11 @@ _ = @"あなたはこのファイルにChatGPTが出力したコメントやコ�
 //    （入力(−) × IChapterContext<in T>(−) = 共変(＋) の符号合成で PushBack が型安全になります。）
 // ============================================================================
 #if VERYVIBE_USAGEEXAMPLE
-namespace VeryVibe.UsageExample
+namespace ChapterVibe.UsageExample
 {
     using System;
     using System.Globalization;
-    using VeryVibe;
+    using ChapterVibe;
 
     // ------------------------------------------------------------------------
     // Arg インタフェース定義（一般 → 具体の順を維持／直列 or 多重継承を明示）
@@ -408,9 +408,9 @@ namespace VeryVibe.UsageExample
 #endif
 /*
 // ============================================================================
-// End: VeryVibe.UsageExample （入れ替え候補サンプル / RULE準拠・XMLコメント付）
+// End: ChapterVibe.UsageExample （入れ替え候補サンプル / RULE準拠・XMLコメント付）
 // ============================================================================/*
-VeryVibe.IArg は、すべての役割インターフェースの基底となるマーカーインタフェース（メンバーなし）。
+ChapterVibe.IArg は、すべての役割インターフェースの基底となるマーカーインタフェース（メンバーなし）。
      IChapter 実装クラスの Handle メソッドは直接呼び出さず、Stage クラスや buffer.PushBack() を通じて呼び出すこと。IChapter 実装クラスから IChapter 実装クラスの Handle を直接呼び出してはならない。
    4. インタフェース定義は対応する Chapter の直前に置くこと。
    5. 各インタフェースメンバには明確な XML コメントを記述すること。
@@ -421,7 +421,7 @@ VeryVibe.IArg は、すべての役割インターフェースの基底となる
    10. IContextBuffer<out TArg> の out と IChapterContext<in TArg> の in のバリアンスを維持すること。（理由：入力(−)×反変(−)=共変(＋) の符号合成で CS1961 を満たしているため）
        CS1961 違反を起こさないよう out/in の使用位置を保証すること。
    11. フィールドよりプロパティを優先すること。ただし、内部ロック用や固定コレクションなど従来的用途においては private readonly フィールドの利用を認める。
-   12. 設計上の選択が必然ではなくフレームワークの方針による場合は、その旨と意図をインラインコメントに記述し、VeryVibe 外の文脈（および AI/自動レビュー）でも自己説明的になるようにすること。例: readonly フィールドではなくプロパティを選択する、明示的インタフェース実装、パイプラインやリフレクションのための非標準的な命名/可視性、スレッドセーフ性やアロケーションに関するトレードオフ。
+   12. 設計上の選択が必然ではなくフレームワークの方針による場合は、その旨と意図をインラインコメントに記述し、ChapterVibe 外の文脈（および AI/自動レビュー）でも自己説明的になるようにすること。例: readonly フィールドではなくプロパティを選択する、明示的インタフェース実装、パイプラインやリフレクションのための非標準的な命名/可視性、スレッドセーフ性やアロケーションに関するトレードオフ。
    13. I/O や外部プロセス、環境依存呼び出しなどで発生しうる例外は Chapter 内で処理する。既定では Handle の外へ例外を伝播させない。致命的障害など呼び出し側の判定が必要な場合は、呼び出し元の役割IFに IErrorSink 等の“サニタイズ済みエラーの記録口”を定義し、任意のエラーオブジェクト（例外の要約・構造化メタのみ、PII/スタックを含めない）を記録することで逆伝播させる。例外オブジェクト（Exception）自体を IArg に格納して保持してはならない（RULE #25/#32）。
    14. .NET 8.0 の言語機能を活用すること。Nullable を有効化すること。ImplicitUsings は無効化すること。アクセス修飾子は internal をデフォルトとし、最小に絞ること。
    15. コードのコンパイルや実行に .csproj 側の設定（例: TargetFramework, UseWindowsForms, SupportedOSPlatformVersion, プラットフォーム依存パッケージ参照など）が必須な場合は、プログラムの冒頭コメントにその旨を明記すること。
@@ -471,7 +471,7 @@ VeryVibe.IArg は、すべての役割インターフェースの基底となる
          <NoWarn>$(NoWarn);IDE0130</NoWarn>
        この既定を前提にコードを生成する。外す場合はコメントで明示する。
    45.（RULE 保存方針）
-       RULE ブロックは `#if VERYVIBE_RULES` で残すか、別ファイル（VeryVibe.RULES.md 等）へ切り出して保存してよい。生成後に完全削除する場合は、SSoT の所在を別コメントで必ず示す。
+       RULE ブロックは `#if VERYVIBE_RULES` で残すか、別ファイル（ChapterVibe.RULES.md 等）へ切り出して保存してよい。生成後に完全削除する場合は、SSoT の所在を別コメントで必ず示す。
 
 ------（テンプレート）コード生成後にユーザーへ返すチャット出力 -------
 
@@ -533,20 +533,20 @@ RULE: コメント出力フォーマット契約
 ================= END: RULE: コメント出力フォーマット契約 ==================
 
 ==========================================================================
-RULE: VeryVibe 名前空間での定義の絶対参照（IChapter/IContextBuffer/IChapterContext/IArg）
+RULE: ChapterVibe 名前空間での定義の絶対参照（IChapter/IContextBuffer/IChapterContext/IArg）
 ==========================================================================
 
 [目的]
-  - VeryVibe コアにあるランタイム契約（IArg / IChapter<TArg> / IContextBuffer<out TArg> / IChapterContext<in TArg>）を
+  - ChapterVibe コアにあるランタイム契約（IArg / IChapter<TArg> / IContextBuffer<out TArg> / IChapterContext<in TArg>）を
     全コンポーネントが一貫して参照し、各機能側での再定義・影の型の混入を防止する。
 
 [必須事項]
-  1) VeryVibe 名前空間の明示
+  1) ChapterVibe 名前空間の明示
    - すべての Chapter 実装を含むファイルは、ファイル先頭（namespace の内側）に以下を必ず記すこと:
-        using VeryVibe;
+        using ChapterVibe;
 
   2) 再定義の禁止
-      - 次のいずれの型も、アプリ/機能側（例: VeryVibe.Cal 等）で新規に定義してはならない:
+      - 次のいずれの型も、アプリ/機能側（例: ChapterVibe.Cal 等）で新規に定義してはならない:
           interface IArg
           interface IChapter<in TArg>
           interface IContextBufferr<out TArg>
@@ -554,9 +554,9 @@ RULE: VeryVibe 名前空間での定義の絶対参照（IChapter/IContextBuffer
       - これらの「同名/同義の型」を別 namespace で宣言すること（影武者定義）も禁止。
  
   3) 便利クラスの取り扱い
-      - VeryVibe 名前空間に ChapterContext<T> / NoopContextBuffer 等の“実装クラス”が存在する場合は原則としてそれを使用する。
-      - VeryVibe 名前空間に未提供の場合や継承拡張したい場合、独自実装したい場合、機能側で実装を定義してよい。
-      - 機能側で実装する場合、VeryVibe 名前空間に存在するクラスと異なる名前を付けること。
+      - ChapterVibe 名前空間に ChapterContext<T> / NoopContextBuffer 等の“実装クラス”が存在する場合は原則としてそれを使用する。
+      - ChapterVibe 名前空間に未提供の場合や継承拡張したい場合、独自実装したい場合、機能側で実装を定義してよい。
+      - 機能側で実装する場合、ChapterVibe 名前空間に存在するクラスと異なる名前を付けること。
  
   4) using 配置の統一
      - C# 12 以降のファイルスコープ namespace を用いる場合でも、using は namespace ブロックの「内側」に置くこと。
@@ -597,7 +597,7 @@ Rule: ユーザーから明示的に実施をされない限り、本手順は�
 Specification Review Template
 
 ## Specification Compliance
-- Does the agreed specification align with the VeryVibe RULE set (SOLID principles, safety principles, least privilege, No Destructive Changes, etc.)?
+- Does the agreed specification align with the ChapterVibe RULE set (SOLID principles, safety principles, least privilege, No Destructive Changes, etc.)?
 - Is the relationship between each Chapter and its corresponding IArg interface clearly defined?
 - Does the specification include explicit implementation of RootArg and the prohibition of direct RootArg access?
 
@@ -683,7 +683,7 @@ Rule: ユーザーから明示的に実施をされない限り、本手順は�
 ユーザーが「コード生成手順 1. を実施」と指示した場合：
  各 Chapter 直前に配置する interface の**実装コード**（XML ドキュメントコメント必須）を生成してソースコードにマージし、ダウンロード可能にする。
  入力: コメント生成手順6. の最終化コメント（SSoT）
- ルール: VeryVibe RULE 準拠。契約型はインタフェース（IReadOnlyList<T> 等）で公開。配列や List<T> を直接返さない。
+ ルール: ChapterVibe RULE 準拠。契約型はインタフェース（IReadOnlyList<T> 等）で公開。配列や List<T> を直接返さない。
         **インタフェイス及び各メンバには、必ず XML ドキュメントコメントを付与すること。**
 注意: Chat 返信の末尾にはレビュー結果のみを簡潔に出す（テンプレ本文の再掲は禁止）。
 === End コード生成手順 1. ===
@@ -763,7 +763,7 @@ Rule: ユーザーから明示的に実施をされない限り、本手順は�
  - Main メソッドを実装し、ダウンロード可能にする。
  - Main メソッドは、Stage と 最初の Chapter、RootArg のインスタンス、および他に必要となるインスタンスを生成し、
    Stage.Run() を呼び出す。
-**重要(必ずユーザーに報告 or 依頼)**: この時点で VeryVibe.UsageExample の実装は削除するか、その旨をユーザーに依頼(削除依頼)すること。
+**重要(必ずユーザーに報告 or 依頼)**: この時点で ChapterVibe.UsageExample の実装は削除するか、その旨をユーザーに依頼(削除依頼)すること。
 === コード生成手順 4. Mainメソッドの実装 ===
 */
 /*
@@ -783,12 +783,12 @@ Rule: ユーザーから明示的に実施をされない限り、本手順は�
 === End コード生成手順 5. ===
 */
 
-namespace VeryVibe
+namespace ChapterVibe
 {
     using System;
     using System.Collections.Generic;
 
-    // ----- VeryVibe Framework -----
+    // ----- ChapterVibe Framework -----
     /// <summary>
     /// Marker interface for argument types.
     /// </summary>
@@ -1011,7 +1011,7 @@ namespace VeryVibe
 仕様セルフレビュー（コメント生成手順 2.）
 =========================================================================
 ■ Specification Compliance
-- VeryVibe RULE（SOLID/安全原則/最小特権/非破壊）に整合: Yes
+- ChapterVibe RULE（SOLID/安全原則/最小特権/非破壊）に整合: Yes
 - Chapter ↔ Arg IF の対応：上流→下流の継承鎖を明示し、RootArg 明示実装を前提に記述: Yes
 - RootArg 直接参照禁止の明示: Yes（IF 経由アクセスのみ）
 
@@ -1158,7 +1158,7 @@ G) 既定動作の固定
 - RootArg は**明示的実装**でこれら全IFを実装し、Chapter は対応IF 経由のみアクセス（RootArg 直接参照禁止）。
 
 継承鎖（一般 → 具体 の順）:
-  VeryVibe.IArg
+  ChapterVibe.IArg
     ← IWriteArg
       ← IEncodePngArg / IEncodeGifArg
         ← IRenderArg
@@ -1245,9 +1245,9 @@ public interface IEncodeGifArg : IWriteArg
 }
 
 ---------------------------------------
-[IWriteArg : VeryVibe.IArg]
+[IWriteArg : ChapterVibe.IArg]
 ---------------------------------------
-public interface IWriteArg : VeryVibe.IArg
+public interface IWriteArg : ChapterVibe.IArg
 {
     string OutputPathNormalized { get; }
     bool DryRun { get; }
@@ -1269,7 +1269,7 @@ namespace LissajousTool
 {
     using System.Collections.Generic;
     using System.Globalization;
-    using VeryVibe;
+    using ChapterVibe;
 
     /// <summary>
     /// CLI 引数を解析して下流へ受け渡す最上流契約（最具体）。
@@ -1681,12 +1681,12 @@ namespace LissajousTool
     using Microsoft.Extensions.Logging.Abstractions;
     using System;
     using System.IO;
-    using VeryVibe;
+    using ChapterVibe;
 
     // ------------------------------------------------------------------------
     // 解析 → 正規化 → レンダリング → エンコード(PNG/GIF) → 書込み
     // インタフェース継承鎖（一般 → 具体）:
-    //   VeryVibe.IArg
+    //   ChapterVibe.IArg
     //     ← IWriteArg
     //       ← IEncodePngArg / IEncodeGifArg
     //         ← IRenderArg
@@ -1914,9 +1914,9 @@ namespace LissajousTool
 // ここまで：コード生成手順 3（Chapter 空実装雛形・修正版）
 // ============================================================================
 // コード生成手順 4. Mainメソッドの実装（LissajousTool / CLI）
-// - VeryVibe ランタイムの Stage を起動し、最初の Chapter と RootArg を配線します。
+// - ChapterVibe ランタイムの Stage を起動し、最初の Chapter と RootArg を配線します。
 // - ログは現状 Abstractions のみ参照のため NullLoggerFactory を使用（将来 Console 等を追加可）。
-// **重要**: 現在のファイルには VeryVibe.UsageExample 側にも Program.Main が存在します。
+// **重要**: 現在のファイルには ChapterVibe.UsageExample 側にも Program.Main が存在します。
 //          「複数のエントリポイント」エラーを避けるため、UsageExample の Program を削除するか、
 //          `#if VERYVIBE_USAGEEXAMPLE` でガードしてください。  :contentReference[oaicite:0]{index=0}
 // ============================================================================
@@ -1925,7 +1925,7 @@ namespace LissajousTool
 {
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
-    using VeryVibe;
+    using ChapterVibe;
 
     /// <summary>
     /// LissajousTool のエントリポイント。
@@ -1947,7 +1947,7 @@ namespace LissajousTool
             // RootArg（安全既定: DryRun=true, AllowOverwrite=false）
             var rootArg = new RootArg(rawArgs: args, dryRunDefault: true, allowOverwriteDefault: false);
 
-            // VeryVibe ランタイム起動
+            // ChapterVibe ランタイム起動
             var stage = new Stage<IParseArgsArg>();
             stage.Run(firstChapter, rootArg);
 
@@ -1963,7 +1963,7 @@ namespace LissajousTool
     using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using VeryVibe;
+    using ChapterVibe;
 
     internal sealed class ParseCliChapter : IChapter<IParseArgsArg>
     {
@@ -2151,7 +2151,7 @@ namespace LissajousTool
             }
 
             // 以降は BuildModelChapter が担当
-            buffer.PushBack(new VeryVibe.ChapterContext<IBuildModelArg>(new BuildModelChapter(_loggerFactory), (IBuildModelArg)arg));
+            buffer.PushBack(new ChapterVibe.ChapterContext<IBuildModelArg>(new BuildModelChapter(_loggerFactory), (IBuildModelArg)arg));
         }
 
         private static string[] ToArray(IReadOnlyList<string> raw)

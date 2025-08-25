@@ -27,7 +27,7 @@ Please answer in a Usage-like format that would be displayed by --help, with the
 Assume that you will generate the program according to the RULE and steps in this .cs file.
 */
 _ = "Once the definition of what to create is ready, start code generation with a prompt like the following.";
-_ = "Note: Including this prompt and from this prompt onward, we will proceed while uploading/updating VeryVibe_ja-JP.cs.";
+_ = "Note: Including this prompt and from this prompt onward, we will proceed while uploading/updating ChapterVibe_ja-JP.cs.";
 /*
 Now, referring to the conversation up to this point in this chat, please carry out Comment Generation Step 1.
 */
@@ -47,9 +47,9 @@ _ = @"You can advance vibe coding by pasting the comments and code output by Cha
 // --- END For Users ---
 
 /* --- RULES for Generative AI ---
-   The VeryVibe namespace provides the core functions of the VeryVibe framework.
+   The ChapterVibe namespace provides the core functions of the ChapterVibe framework.
    When generating code, use this core functionality and implement each chapter in compliance with the SOLID principles.
-   The VeryVibe.UsageExample namespace shows usage examples.
+   The ChapterVibe.UsageExample namespace shows usage examples.
    Also, delete the RULE block after code generation (unless following the “RULE retention policy” shown later).
 
    When generating or modifying code in this file, follow the rules below.
@@ -57,13 +57,13 @@ _ = @"You can advance vibe coding by pasting the comments and code output by Cha
    1. Divide the source code into appropriate phases, giving each “Chapter” an independent function. Keep the Main method short. To achieve this, prepare independent chapters for parsing command‑line parameters and for pre‑processing various I/O operations.
    2. Classes implementing each Chapter must implement IChapter and depend only on the minimum necessary role interfaces.
    3. To satisfy the contravariance of the type parameters of IChapter and IChapterContext, the inheritance chain should be such that the upstream (closer to input) side inherits the role interfaces of the downstream (closer to output) side, thereby becoming “more specialized.” Maintain consistency that “Upstream interfaces inherit downstream interfaces (general → specific).”
-     Example (general → specific): VeryVibe.IArg ← IProcessingArg ← IParseArgsArg
-     * At runtime, due to the contravariant nature of `IChapter<in TArg>`, a Chapter that processes downstream can safely accept its parent, the “more specific” upstream interface (i.e., the actual Arg). See the VeryVibe.ContravarianceExample below. (This file is a .cs file, and it has been confirmed to compile and operate as intended.)
+     Example (general → specific): ChapterVibe.IArg ← IProcessingArg ← IParseArgsArg
+     * At runtime, due to the contravariant nature of `IChapter<in TArg>`, a Chapter that processes downstream can safely accept its parent, the “more specific” upstream interface (i.e., the actual Arg). See the ChapterVibe.ContravarianceExample below. (This file is a .cs file, and it has been confirmed to compile and operate as intended.)
 */
 // ============================================================================
-// VeryVibe.UsageExample (sample candidate to be replaced / conforms to RULE with XML comments)
+// ChapterVibe.UsageExample (sample candidate to be replaced / conforms to RULE with XML comments)
 // ---------------------------------------------------------------------------
-// This section is the minimal usage example of the VeryVibe framework (Hello → World/WorldWithCulture).
+// This section is the minimal usage example of the ChapterVibe framework (Hello → World/WorldWithCulture).
 // Important:
 // - In Code Generation Step 4 (after implementing Main), **delete or replace this UsageExample** (in accordance with the RULE retention policy).
 // - Arg interfaces follow the contravariance policy of RULE #3 (upstream = specific ← downstream = general).
@@ -77,11 +77,11 @@ _ = @"You can advance vibe coding by pasting the comments and code output by Cha
 //    (because contravariance (−) combined with contravariance (−) results in covariance (+), ensuring type safety for PushBack.)
 // ============================================================================
 
-namespace VeryVibe.UsageExample
+namespace ChapterVibe.UsageExample
 {
     using System;
     using System.Globalization;
-    using VeryVibe;
+    using ChapterVibe;
 
     // ------------------------------------------------------------------------
     // Arg interface definitions (maintain order from general → specific / use serial or multiple inheritance)
@@ -393,9 +393,9 @@ namespace VeryVibe.UsageExample
 }
 /*
 // ============================================================================
-// End: VeryVibe.UsageExample (sample candidate to be replaced / conforms to RULE with XML comments)
+// End: ChapterVibe.UsageExample (sample candidate to be replaced / conforms to RULE with XML comments)
 // ============================================================================/*
-VeryVibe.IArg is the base marker interface for all role interfaces (it has no members).
+ChapterVibe.IArg is the base marker interface for all role interfaces (it has no members).
      Do not call the Handle method of IChapter implementation classes directly; call them through the Stage class or buffer.PushBack(). One IChapter implementation must not directly call the Handle of another IChapter implementation.
    4. Place interface definitions immediately before their corresponding chapter.
    5. Provide clear XML comments for each interface member.
@@ -405,7 +405,7 @@ VeryVibe.IArg is the base marker interface for all role interfaces (it has no me
    9. Directly referencing RootArg is prohibited. Including setters, always access via the interface.
    10. Maintain the variance of IContextBuffer<out TArg> (out) and IChapterContext<in TArg> (in). (Reason: input (−) × contravariant (−) = covariant (+); this satisfies CS1961.) Guarantee the out/in usage positions to avoid CS1961 violations.
    11. Prefer properties over fields. However, using private readonly fields is permitted for conventional uses such as internal locks or fixed collections.
-   12. When a design choice is not inevitable but a framework policy, note this and its intent in an inline comment, so that it is self‑explanatory even outside the VeryVibe context (and for AI/automated reviews). Examples: choosing properties rather than readonly fields, explicit interface implementation, non‑standard naming/visibility for pipelines or reflection, trade‑offs between thread safety and allocations.
+   12. When a design choice is not inevitable but a framework policy, note this and its intent in an inline comment, so that it is self‑explanatory even outside the ChapterVibe context (and for AI/automated reviews). Examples: choosing properties rather than readonly fields, explicit interface implementation, non‑standard naming/visibility for pipelines or reflection, trade‑offs between thread safety and allocations.
    13. Handle exceptions arising from I/O, external processes, or environment‑dependent calls within the chapter. By default, do not propagate exceptions outside Handle. If a fatal failure requires the caller to decide, define a sanitized error recording interface such as IErrorSink on the caller’s role interface to record a sanitized error object (only a summary or structured metadata of the exception, no PII/stack) to propagate back. Do not store the exception object itself in IArg (see RULE #25/#32).
    14. Leverage .NET 8.0 language features. Enable nullable reference types. Disable ImplicitUsings. Use internal as the default access modifier and minimize exposure.
    15. If certain .csproj settings (e.g., TargetFramework, UseWindowsForms, SupportedOSPlatformVersion, platform‑specific package references) are required for compiling or running the code, note this at the beginning of the program in comments.
@@ -455,7 +455,7 @@ VeryVibe.IArg is the base marker interface for all role interfaces (it has no me
          <NoWarn>$(NoWarn);IDE0130</NoWarn>
        Assume this default when generating code. If removing it, explicitly note it in comments.
    45. (RULE retention policy)
-       Keep the RULE block under `#if VERYVIBE_RULES` or extract into a separate file (VeryVibe.RULES.md, etc.) for preservation. If completely deleted after generation, indicate the single source of truth’s location in another comment.
+       Keep the RULE block under `#if VERYVIBE_RULES` or extract into a separate file (ChapterVibe.RULES.md, etc.) for preservation. If completely deleted after generation, indicate the single source of truth’s location in another comment.
 
 ------ (Template) Chat output to return to the user after code generation -------
 
@@ -516,19 +516,19 @@ Example (expected form at the beginning of the heading):
 ================= END: RULE: Comment Output Format Contract ==================
 
 ==========================================================================
-RULE: Absolute reference for definitions in the VeryVibe namespace (IChapter/IContextBuffer/IChapterContext/IArg)
+RULE: Absolute reference for definitions in the ChapterVibe namespace (IChapter/IContextBuffer/IChapterContext/IArg)
 ==========================================================================
 
 [Purpose]
-  - Ensure that all components consistently reference the runtime contracts in the VeryVibe core (IArg / IChapter<TArg> / IContextBuffer<out TArg> / IChapterContext<in TArg>) and prevent redefinition or shadow types mixing in the application/function side.
+  - Ensure that all components consistently reference the runtime contracts in the ChapterVibe core (IArg / IChapter<TArg> / IContextBuffer<out TArg> / IChapterContext<in TArg>) and prevent redefinition or shadow types mixing in the application/function side.
 
 [Requirements]
-  1) Explicitly use the VeryVibe namespace
+  1) Explicitly use the ChapterVibe namespace
    - All files containing Chapter implementations must include the following at the beginning of the file (inside the namespace):
-        using VeryVibe;
+        using ChapterVibe;
 
   2) Prohibit redefinitions
-      - The following types must not be newly defined on the application/function side (e.g., VeryVibe.Cal):
+      - The following types must not be newly defined on the application/function side (e.g., ChapterVibe.Cal):
           interface IArg
           interface IChapter<in TArg>
           interface IContextBuffer<out TArg>
@@ -536,9 +536,9 @@ RULE: Absolute reference for definitions in the VeryVibe namespace (IChapter/ICo
       - Declaring types with the same name/meaning in another namespace (shadow definitions) is also prohibited.
 
   3) Treatment of utility classes
-      - When implementation classes such as ChapterContext<T> / NoopContextBuffer are provided in the VeryVibe namespace, use them in principle.
-      - If they are not provided in the VeryVibe namespace, or you want to extend them via inheritance, or you want to implement your own, you may define implementations in the function side.
-      - When implementing on the function side, give it a different name than classes existing in the VeryVibe namespace.
+      - When implementation classes such as ChapterContext<T> / NoopContextBuffer are provided in the ChapterVibe namespace, use them in principle.
+      - If they are not provided in the ChapterVibe namespace, or you want to extend them via inheritance, or you want to implement your own, you may define implementations in the function side.
+      - When implementing on the function side, give it a different name than classes existing in the ChapterVibe namespace.
 
   4) Unified placement of using directives
      - Even if using file‑scoped namespace in C# 12 and later, place using directives inside the namespace block. The analysis/generation code will output based on this premise.
@@ -578,7 +578,7 @@ Rule: Do not carry out this step unless explicitly instructed by the user (do no
 Specification Review Template
 
 ## Specification Compliance
-- Does the agreed specification align with the VeryVibe RULE set (SOLID principles, safety principles, least privilege, No Destructive Changes, etc.)?
+- Does the agreed specification align with the ChapterVibe RULE set (SOLID principles, safety principles, least privilege, No Destructive Changes, etc.)?
 - Is the relationship between each Chapter and its corresponding IArg interface clearly defined?
 - Does the specification include explicit implementation of RootArg and the prohibition of direct RootArg access?
 
@@ -664,7 +664,7 @@ Rule: Do not carry out this step unless explicitly instructed by the user (do no
 If the user instructs “Please perform Code Generation Step 1”:
  Generate the implementation code (with required XML documentation comments) for the interfaces placed immediately before each chapter, merge it into the source code, and make it available for download.
  Input: the finalized comment (SSoT) from Comment Generation Step 6.
- Rules: Comply with the VeryVibe RULE. Publicly expose contract types via interfaces (IReadOnlyList<T>, etc.). Do not return arrays or List<T> directly.
+ Rules: Comply with the ChapterVibe RULE. Publicly expose contract types via interfaces (IReadOnlyList<T>, etc.). Do not return arrays or List<T> directly.
         **All interfaces and each of their members must have XML documentation comments attached.**
 Note: At the end of the chat reply, output only the review results concisely (do not reprint the template text).
 === End Code Generation Step 1 ===
@@ -743,7 +743,7 @@ Rule: Do not carry out this step unless explicitly instructed by the user (do no
 If the user instructs “Please perform Code Generation Step 4”:
  - Implement the Main method and make it available for download.
  - The Main method should create instances of Stage, the first Chapter, RootArg, and any other necessary instances, and call Stage.Run().
-**Important (must report to or request from the user)**: At this point, delete the VeryVibe.UsageExample implementation or request the user to delete it.
+**Important (must report to or request from the user)**: At this point, delete the ChapterVibe.UsageExample implementation or request the user to delete it.
 === End Code Generation Step 4: Implementing the Main Method ===
 */
 /*
@@ -761,12 +761,12 @@ If the user instructs “Please perform Code Generation Step 5”:
  - Ask the user to delete the empty implementations implemented in Code Generation Step 3 by listing the relevant method names comprehensively.
 === End Code Generation Step 5 ===
 */
-namespace VeryVibe
+namespace ChapterVibe
 {
     using System;
     using System.Collections.Generic;
 
-    // ----- VeryVibe Framework -----
+    // ----- ChapterVibe Framework -----
     /// <summary>
     /// Marker interface for argument types.
     /// </summary>

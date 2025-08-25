@@ -1,4 +1,10 @@
-﻿# Qiita記事清書用プロンプト兼作業ノート
+﻿<!--
+This file is released under the MIT License.
+See LICENSE.txt for details.
+https://github.com/cozyupk/misc/blob/main/LISENCE.txt
+-->
+
+# Qiita記事清書用プロンプト兼作業ノート
 
 ## 生成AIへの指示
 

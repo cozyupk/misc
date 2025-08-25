@@ -1,93 +1,95 @@
-﻿// 本ファイルはプロンプトも含め、MIT License の下で公開されています。
-//    → MIT License に従い、商用・非商用を問わず自由にご利用いただけます。
-// Copyright (C) 2025 cozyupk
-// https://github.com/cozyupk
-// なお、このコードおよびプロンプトは研究・学習・人類と生成AIの進化を目的とした未完成版であることを付記します。
+﻿生成RULE 兼 設計書き込みテンプレート
+==========
+Version: 0.1.1 (2024-08-23)
 
-// This file, including the prompts, is released under the MIT License.
-//    → You are free to use it for both commercial and non-commercial purposes in accordance with the MIT License.
-// Copyright (C) 2025 cozyupk
-// https://github.com/cozyupk
-// Note: This code and its prompts are provided as an unfinished version,
-// intended for research, learning, and the joint evolution of humanity and generative AI.
+OCPバイブコーディング用
 
-// --- ユーザー向け ---
-namespace ForUser { class Explanation { public static void Dummy() { 
+---
 
-_ = "ChatGPT とのバイブコーディングで利用する場合は、チャットの冒頭で次のプロンプトを入力することを推奨します。";
-/*
- - ここから先、このチャットでは私との会話履歴を一切使わずに答えてください。
- - 会話の中でソースコード改善案を提案する場合は、まずはコード改善案を提示することの許可をユーザーに求めてください。
-*/
-_ = "また、オプショナルですが、次のようなプロンプトを同時に入力することも可能かと思います。（好みに応じて修正）";
-/*
-次のプロンプト以降、内部で3回自己レビューしてから、最終出力+ユーザー側での確認方法＋QAチェック全YES＋セルフレビュー要約3点も出力してください。
-口調は優しいお医者さんが、ユーザーに寄り添って説明するような感じでお願いします。
-*/
-_ = "その後、このファイルをアップロードすると同時に、次のようなプロンプトで「作るもの」の定義をしていきましょう。（下記はあくまで例です。目的に応じて修正）";
-_ = "※ このプロンプトも含め、このプロンプト以降、ChapterVibe_ja-JP.cs をアップロード/更新しながら進めていきます。";
-/*
- Windows環境上のC#で、パラメータを指定してリサージュ曲線を描き .png ファイルとして保存するコンソールプログラムを書きたいです。
-また、アニメーションgif出力にも対応したいです。
-できるだけ柔軟なプログラムとするためには、どのようなコマンドラインオプションが必要ですか？ 
---help で表示される Usage 風に、説明部分は日本語で答えてください。
-この .cs ファイルの RULE や手順に従って生成することを想定しています。 
- */
-_ = "「作るものの定義」準備が整ったら、次のようなプロンプトでコード生成を開始します。";
-_ = "※ このプロンプトも含め、このプロンプト以降、ChapterVibe_ja-JP.cs をアップロード/更新しながら進めていきます。";
-/*
-それでは、このチャットでの今までの会話を参照して、コメント生成手順 1. を実施してください。
-*/
-_ = "ChatGPT が「コピペできない」形で応答してきた場合は、次のようなプロンプトを入力してみてください。";
-/*
-コピペ可能なようにコードブロックで出力してください。
- */
-_ = "出力の改善を求める場合は、次のようなプロンプトを入力してみてください。";
-/*
-先ほど提案してくれた Usage 風の説明も含めてください。また、コピペ可能なようにコードブロックで出力してください。
-*/
-_ = @"あなたはこのファイルにChatGPTが出力したコメントやコードを貼り付けて、次のプロンプトで
-      更新したファイルを再度アップロードしつつ、「〇〇手順〇を実施してください」とプロンプティングすることで、
-      バイブコーディングを進めることができます。
-      その形で コメント生成手順 1. ～ コメント生成手順 6. を実施し、その後、コード生成手順 1. 以降も順に実施していきます。
-      コード生成手順 5. は、ChatGPTが「対象なし」を出力するまで繰り返し実施します。
-      各段階でコンパイルエラーや警告が発生した場合は、あなたが修正して GPT にフィードバックするか、
-      必要があれば GPT にスクリーンショットとソースコードを提供し、修正を依頼してください。";
-}}}
-// --- END ユーザー向け ---
+本ファイルはプロンプトも含め、MIT License の下で公開されています。
 
-/* --- 生成AI向け RULE ---
-   ChapterVibe 名前空間は、ChapterVibe フレームワークのコア機能を提供します。 
-   コードを生成する際には、このコア機能を活用し、各 Chapter を SOLID 原則に準拠して実装してください。
-   ChapterVibe.UsageExample 名前空間は使用例を示すためのものです。
-   また、RULE ブロックもコード生成後には削除してください（ただし最後に示す「RULE 保存方針」に従う場合を除く）。
-  
-   このファイル内のコードを生成・変更する際には以下のルールに従ってください。
-   （注）#3 は生成AIが誤解しやすいので特に注意すること。
-   1. ソースコードを適切なフェーズに分割し、それらの各 "Chapter" に独立した機能を持たせること。Mainメソッドは短く保つこと。そのために、コマンドラインパラメータの解析や各種I/Oの前処理等にも、独立した "Chapter" を用意すること。
-   2. 各 Chapter を実装するクラスは IChapter を実装し、必要最小限の役割インタフェースにのみ依存すること。
-   3. IChapter や IChapterContext の型引数の反変性を成立させるため、**上流（入力に近い）側は、下流（出力に近い）側の役割インタフェイスを継承して“より具体的”になる**継承鎖とする。
-     「上流IF は下流IF を継承する（一般→具体）」で一貫させる。
-      例（一般 → 具体 の順）: ChapterVibe.IArg ← IProcessingArg ← IParseArgsArg
-      ※ 実行時には、反変 `IChapter<in TArg>` の性質により、下流を処理する Chapter が、
-         その親である“より具体的な”上流IF（＝実際の Arg）を安全に受理できる。下記 ChapterVibe.ContravarianceExample を参照。
-         (このファイルは .cs ファイルであり、コンパイルが通り、意図道理動作することを確認済です。)
-*/
+ Copyright (C) 2025 cozyupk [https://github.com/cozyupk](https://github.com/cozyupk)
+
+ * MIT License に従い、商用・非商用を問わず自由にご利用いただけます。
+
+ * なお、本プロンプトおよびそれに含まれるソースコードは、は研究・学習・人類と生成AIの進化を目的とした未完成版であることを付記します。
+
+---
+
+This file, including the prompts, is released under the MIT License.  
+
+Copyright (C) 2025 cozyupk  
+[https://github.com/cozyupk](https://github.com/cozyupk)  
+
+* You are free to use it for both commercial and non-commercial purposes, in accordance with the MIT License.  
+* Please note that this prompt and the included source code are an unfinished version, intended for research, learning, and the evolution of humanity together with generative AI.  
+
+---
+## 1. 本ファイルの目的
+1. 本ファイルでは、特定の手法に従ったC#のソースコード生成方法を示します。
+
+1. 2. また、生成された特定ドメインのコードに関しての設計を、生成AIの指示に従い、末尾に追記していきます。
+
+## 2. ユーザーへの確認ルール
+
+次の場合、必ずユーザーにチャットで意思を確認し、判断を仰いでください。
+
+1. プロンプトファイルの記述が曖昧で、複数の意味に取れる場合  
+   → 例：「Argを使う」とあるが、どの責務まで含めるか不明なとき
+
+2. プロンプトファイルの内容と、ユーザーのチャット入力内容が矛盾している場合  
+   → 例：RULEでは「RootArgを一元的に用いる」とあるのに、ユーザーが「Argを分割して実装して」と入力したとき
+
+3. 下流工程（実装工程など）で、上流工程（設計工程など）に問題があると発覚した場合  
+   → 例：RootArgに必要なメンバが定義されておらず、コード生成ができないとき
+
+4. その他、AIの判断だけで進めると設計の意図や品質を損なう恐れがある場合  
+   → 例：例外処理の責務がどのChapterに属するか不明なとき
+ 
+5. 生成中のソースコードを参照したくなった場合  
+   → クラス名やメソッド名などを列挙し、ユーザーにチャットへのアップロードを依頼すること。  
+      （AI 自身が暗黙に「コードを把握した」前提で進めてはならない）
+ 
+## 3. ChapterVibe フレームワークとその利用方法
+ 1. ChapterVibe 名前空間は、ChapterVibe フレームワークのコア機能を提供します。 
+
+ 2. コードを生成する際には、このコア機能を活用し、各 "Chapter を SOLID 原則に準拠して実装してください。
+
+ 3. コードを生成・変更する際には以下のルールに従ってください。
+     1. コードを適切なフェーズに分割し、それらの各 "Chapter" に独立した機能を持たせること。
+
+     2. Mainメソッドは短く保つこと。そのために、コマンドラインパラメータの解析や各種I/Oの前処理等にも、独立した "Chapter" を用意すること。
+
+     3. 各 Chapter を実装するクラスは IChapter を実装し、必要最小限の役割インタフェースにのみ依存すること。
+
+     4. この項は、**生成AIが誤解しやすいため特に注意:** IChapter や IChapterContext の型引数の反変性を成立させるため、**上流（入力に近い）側は、下流（出力に近い）側の役割インタフェイスを継承して“より具体的”になる**継承鎖とする。
+       「上流IF は下流IF を継承する（一般→具体）」で一貫させる。
+       例（一般 → 具体 の順）: ChapterVibe.IArg ← IProcessingArg ← IParseArgsArg
+       実行時には、反変 `IChapter<in TArg>` の性質により、下流を処理する Chapter が、
+       その親である“より具体的な”上流IF（＝実際の Arg）を安全に受理できる。
+       下記ソースコードのChapterVibe.UsageExample 名前空間を参照。
+       (このソースコードは、.cs ファイルとしてコンパイルが通り、意図道理動作することを確認済です。)
+
+     5. ChapterVibe.IArg は、すべての役割インターフェースの基底となるマーカーインタフェース（メンバーなし）。
+
+     6. IChapter 実装クラスの Handle メソッドは直接呼び出さず、Stage クラスや buffer.PushBack() を通じて呼び出すこと。IChapter 実装クラスから IChapter 実装クラスの Handle を直接呼び出してはならない。
+
+ChapterVibeフレームワーク利用例:
+```csharp
 // ============================================================================
-// ChapterVibe.UsageExample （入れ替え候補サンプル / RULE準拠・XMLコメント付）
-// ---------------------------------------------------------------------------
+// ChapterVibe.UsageExample（入れ替え候補サンプル / RULE準拠・XMLコメント付）
+// ----------------------------------------------------------------------------
 // このセクションは ChapterVibe フレームワークの最小利用例（Hello → World/WorldWithCulture）です。
 // 重要:
-// - コード生成手順 4.（Main 実装以降）では **この UsageExample を削除または置き換え** してください（RULE 保存方針に従う）。
-// - Arg インタフェースは RULE #3 の反変方針（上流=具体 ← 下流=一般を継承）に従います。
-// - Chapter 連結は PushBack を用いて示し、RootArg は明示的実装（RULE #7）で提供します。
-// - 例外/入出力は Chapter 内で処理し、外へ伝播させません（RULE #12）。
-// - 分岐する Chapter は多重継承を許容（同名メンバの衝突は new などで明示回避）。
+// - 本ファイルは「生成AIが吐いたコードのレビュー用・設計テンプレ」の一部です。
+// - Arg インタフェースは「反変方針」（上流=具体 ← 下流=一般を継承）に従います（RULE #25 参照）。
+// - Chapter 連結は PushBack を用いて示し、RootArg は明示的実装で提供します（RULE #22 参照）。
+// - 例外/入出力は Chapter 内で処理し、外へ伝播させません（RULE #28 参照）。
+// - 章からは対応する役割インタフェースのみを利用し、RootArg 直参照・無関係メンバへのキャストは禁止です（RULE #23/#24 参照）。
 // 禁止:
-// - RootArg を直接参照しない（必ず役割インタフェース経由でアクセス）。
-// - 章間で new インスタンスに詰め替えて渡さない（既定/許可状態の継承が壊れる）。
-// - IContextBuffer<out T> / IChapterContext<in T> の in/out を入れ替えない。
-//    （入力(−) × IChapterContext<in T>(−) = 共変(＋) の符号合成で PushBack が型安全になります。）
+// - RootArg を直接参照しない（必ず役割インタフェース経由でアクセス：RULE #24）。
+// - 章間で new インスタンス詰め替えを行って引き渡さない（状態の二重化/破綻の温床）。
+// - IContextBuffer<out T> / IChapterContext<in T> の in/out を入れ替えない（RULE #25）。
 // ============================================================================
 
 namespace ChapterVibe.UsageExample
@@ -96,21 +98,13 @@ namespace ChapterVibe.UsageExample
     using System.Globalization;
     using ChapterVibe;
 
-    interface UsingFuga
-    {
-        interface Fuga
-        {
-            void Piyo();
-        }
-    }
-
     // ------------------------------------------------------------------------
     // Arg インタフェース定義（一般 → 具体の順を維持／直列 or 多重継承を明示）
     // ------------------------------------------------------------------------
 
     /// <summary>
     /// カルチャ付き「World」出力に必要な最小契約（下流・一般）。
-    /// <para>RULE #3: 上流IFは下流IFを継承して“より具体的”になります。</para>
+    /// <para>RULE #25: 反変方針により上流でより具体的IFへ拡張します。</para>
     /// </summary>
     internal interface IWorldWithCultureArg : IArg
     {
@@ -119,13 +113,11 @@ namespace ChapterVibe.UsageExample
 
         /// <summary>
         /// 行出力シンク（例：<see cref="Console.WriteLine(string)"/>）。
-        /// 例外やI/O失敗は Chapter 内で処理します（RULE #12）。
+        /// 例外やI/O失敗は Chapter 内で処理します（RULE #28）。
         /// </summary>
         Action<string> WriteLineAction { get; }
 
-        /// <summary>
-        /// 出力に用いるカルチャ。未設定での参照は無効（例外）。
-        /// </summary>
+        /// <summary>出力に用いるカルチャ。未設定での参照は無効（例外）。</summary>
         CultureInfo Culture { get; }
     }
 
@@ -134,13 +126,7 @@ namespace ChapterVibe.UsageExample
     /// </summary>
     internal interface IWorldArg : IArg
     {
-        /// <summary>残り出力回数（ゼロで完了）。</summary>
         int WorldCount { get; set; }
-
-        /// <summary>
-        /// 行出力シンク（例：<see cref="Console.WriteLine(string)"/>）。
-        /// 例外やI/O失敗は Chapter 内で処理します（RULE #12）。
-        /// </summary>
         Action<string> WriteLineAction { get; }
     }
 
@@ -159,35 +145,27 @@ namespace ChapterVibe.UsageExample
         /// </summary>
         new Action<string> WriteLineAction { get; }
 
-        /// <summary>
-        /// カルチャが設定済みなら <c>true</c>。
-        /// </summary>
+        /// <summary>カルチャが設定済みなら <c>true</c>。</summary>
         bool IsCultureSet { get; }
     }
 
     /// <summary>
     /// CLI 引数を解析して <see cref="HelloChapter"/> へ制御を渡す最上流契約（上流・最具体）。
-    /// <para>RULE #1: Main を細く保つため、CLI 解析は Chapter 側に置きます。</para>
     /// </summary>
     internal interface IParseArgsArg : IHelloArg
     {
         /// <summary>コマンドライン引数（実行ファイル名は含まない）。</summary>
         string[] Args { get; }
 
-        /// <summary>
-        /// カルチャ設定（<c>null</c>→設定、二重設定は禁止）。
-        /// </summary>
-        /// <param name="culture">適用するカルチャ。</param>
+        /// <summary>カルチャ設定（<c>null</c>→設定、二重設定は禁止）。</summary>
         void SetCulture(CultureInfo culture);
     }
 
     // ------------------------------------------------------------------------
-    // Chapter 実装（例外/I-O は Chapter 内で完結：RULE #12）
+    // Chapter 実装（例外/I-O は Chapter 内で完結：RULE #28）
     // ------------------------------------------------------------------------
 
-    /// <summary>
-    /// カルチャ付きで「World in {Culture}」を出力する章。
-    /// </summary>
+    /// <summary>カルチャ付きで「World in {Culture}」を出力する章。</summary>
     internal sealed class WorldWithCultureChapter : IChapter<IWorldWithCultureArg>
     {
         /// <inheritdoc/>
@@ -199,7 +177,7 @@ namespace ChapterVibe.UsageExample
             }
             catch (Exception ex)
             {
-                // RULE #12: I/O などの失敗は Chapter 内で処理
+                // RULE #28: I/O などの失敗は Chapter 内で処理
                 arg.WriteLineAction($"[WorldWithCulture] output failed: {ex.Message}");
                 return;
             }
@@ -207,7 +185,7 @@ namespace ChapterVibe.UsageExample
             arg.WorldWithCultureCount--;
             if (arg.WorldWithCultureCount > 0)
             {
-                // 反変: IContextBuffer<out T> × IChapterContext<in T> の符号合成で型安全に PushBack
+                // RULE #25: 反変×共変の符号合成に基づく PushBack
                 buffer.PushBack(new ChapterContext<IWorldWithCultureArg>(this, arg));
             }
             else
@@ -217,9 +195,7 @@ namespace ChapterVibe.UsageExample
         }
     }
 
-    /// <summary>
-    /// 「World」を出力する章（カルチャ無し）。
-    /// </summary>
+    /// <summary>「World」を出力する章（カルチャ無し）。</summary>
     internal sealed class WorldChapter : IChapter<IWorldArg>
     {
         /// <inheritdoc/>
@@ -247,9 +223,7 @@ namespace ChapterVibe.UsageExample
         }
     }
 
-    /// <summary>
-    /// 「Hello」を出力し、回数が尽きたらカルチャ有無に応じて次章へ分岐する章。
-    /// </summary>
+    /// <summary>「Hello」を出力し、回数が尽きたらカルチャ有無に応じて次章へ分岐する章。</summary>
     internal sealed class HelloChapter : IChapter<IHelloArg>
     {
         /// <inheritdoc/>
@@ -272,7 +246,7 @@ namespace ChapterVibe.UsageExample
             }
             else
             {
-                // 分岐: 単なるスキップではなく機能分岐なので兄弟IFへルーティング
+                // 分岐: 機能分岐なので兄弟IFへルーティング（RootArg 直参照は禁止：RULE #23/#24）
                 if (arg.IsCultureSet)
                 {
                     buffer.PushBack(new ChapterContext<IWorldWithCultureArg>(new WorldWithCultureChapter(), arg));
@@ -285,9 +259,7 @@ namespace ChapterVibe.UsageExample
         }
     }
 
-    /// <summary>
-    /// CLI を解析し、必要に応じてカルチャを設定して <see cref="HelloChapter"/> に渡す章。
-    /// </summary>
+    /// <summary>CLI を解析し、必要に応じてカルチャを設定して <see cref="HelloChapter"/> に渡す章。</summary>
     internal sealed class ParseArgsChapter : IChapter<IParseArgsArg>
     {
         /// <inheritdoc/>
@@ -310,7 +282,7 @@ namespace ChapterVibe.UsageExample
             }
             catch (Exception ex)
             {
-                // RULE #12: 解析失敗はここで要約して通知し、外に出さない
+                // RULE #28: 解析失敗はここで要約して通知し、外に出さない
                 arg.WriteLineAction($"[ParseArgs] parsing failed: {ex.Message}");
                 return;
             }
@@ -321,30 +293,12 @@ namespace ChapterVibe.UsageExample
     }
 
     // ------------------------------------------------------------------------
-    // RootArg 実装（明示的実装：RULE #7）
+    // RootArg 実装（明示的実装：RULE #22）
     // ------------------------------------------------------------------------
-
-    public interface RootArgAbstraction : {
-        public interface IRootArgFactory
-        {
-            RootArg CreateRootArg();
-        }
-
-        /// <summary>
-        /// ルート引数を生成します。
-        /// </summary>
-        /// <param name="args">コマンドライン引数（実行ファイル名は含まない）。</param>
-        /// <param name="helloCount">Hello の出力回数（0 以上）。</param>
-        /// <param name="worldCount">World/WorldWithCulture の出力回数（0 以上）。</param>
-        /// <exception cref="ArgumentNullException"><paramref name="args"/> が <c>null</c>。</exception>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="helloCount"/> または <paramref name="worldCount"/> が負。</exception>
-
-
-    }
 
     /// <summary>
     /// すべての役割インタフェースを<strong>明示的に</strong>実装するルート引数。
-    /// <para>内部状態は private メンバで保持し、アクセスは必ずインタフェース経由。</para>
+    /// <para>内部状態は private メンバで保持し、アクセスは必ずインタフェース経由（RULE #22）。</para>
     /// </summary>
     internal sealed class RootArg : IParseArgsArg
     {
@@ -384,7 +338,7 @@ namespace ChapterVibe.UsageExample
         /// <inheritdoc/>
         Action<string> IWorldWithCultureArg.WriteLineAction => WriteLineAction;
 
-        // 内部実装（必ず IF 経由でアクセスさせる）
+        // 内部実装（必ず IF 経由でアクセスさせる：RULE #22）
         private Action<string> WriteLineAction { get; } = Console.WriteLine;
         private string[] Args { get; }
         private CultureInfo? Culture { get; set; }
@@ -401,16 +355,16 @@ namespace ChapterVibe.UsageExample
     }
 
     // ------------------------------------------------------------------------
-    // Main（UsageExample 用 / RULE #1: Main は短く保つ）
+    // Main（UsageExample 用 / 指針: Main は短く保つ）
     // ------------------------------------------------------------------------
 
     /// <summary>
-    /// UsageExample のエントリポイント（本番生成では削除/置換：RULE 保存方針）。
+    /// UsageExample のエントリポイント
     /// </summary>
     internal static class Program
     {
         /// <summary>
-        /// Main は Stage 構築と最初の Chapter 起動のみを行います（RULE #1）。
+        /// Main は Stage 構築と最初の Chapter 起動のみを行います（Main最小化の指針）。
         /// CLI 解析は Chapter（<see cref="ParseArgsChapter"/>）へ委譲します。
         /// </summary>
         private static void Main(string[] args)
@@ -423,72 +377,118 @@ namespace ChapterVibe.UsageExample
         }
     }
 }
-/*
 // ============================================================================
-// End: ChapterVibe.UsageExample （入れ替え候補サンプル / RULE準拠・XMLコメント付）
-// ============================================================================/*
-ChapterVibe.IArg は、すべての役割インターフェースの基底となるマーカーインタフェース（メンバーなし）。
-     IChapter 実装クラスの Handle メソッドは直接呼び出さず、Stage クラスや buffer.PushBack() を通じて呼び出すこと。IChapter 実装クラスから IChapter 実装クラスの Handle を直接呼び出してはならない。
-   4. インタフェース定義は対応する Chapter の直前に置くこと。
-   5. 各インタフェースメンバには明確な XML コメントを記述すること。
-   6. 実行時引数は RootArg 1つに統一すること。
-   7. RootArg ではすべての役割インタフェースを**明示的に実装**すること（メンバは必ずインタフェース経由でのみアクセスできるようにする）。
-   8. 各 Chapter では対応する Arg インタフェース型のみを利用し、他のインタフェースや RootArg にキャストして無関係なメンバにアクセスしないこと。
-   9. RootArg を直接参照することは禁止。Setter も含め、必ずインタフェース経由でアクセスすること。
-   10. IContextBuffer<out TArg> の out と IChapterContext<in TArg> の in のバリアンスを維持すること。（理由：入力(−)×反変(−)=共変(＋) の符号合成で CS1961 を満たしているため）
-       CS1961 違反を起こさないよう out/in の使用位置を保証すること。
-   11. フィールドよりプロパティを優先すること。ただし、内部ロック用や固定コレクションなど従来的用途においては private readonly フィールドの利用を認める。
-   12. 設計上の選択が必然ではなくフレームワークの方針による場合は、その旨と意図をインラインコメントに記述し、ChapterVibe 外の文脈（および AI/自動レビュー）でも自己説明的になるようにすること。例: readonly フィールドではなくプロパティを選択する、明示的インタフェース実装、パイプラインやリフレクションのための非標準的な命名/可視性、スレッドセーフ性やアロケーションに関するトレードオフ。
-   13. I/O や外部プロセス、環境依存呼び出しなどで発生しうる例外は Chapter 内で処理する。既定では Handle の外へ例外を伝播させない。致命的障害など呼び出し側の判定が必要な場合は、呼び出し元の役割IFに IErrorSink 等の“サニタイズ済みエラーの記録口”を定義し、任意のエラーオブジェクト（例外の要約・構造化メタのみ、PII/スタックを含めない）を記録することで逆伝播させる。例外オブジェクト（Exception）自体を IArg に格納して保持してはならない（RULE #25/#32）。
-   14. .NET 8.0 の言語機能を活用すること。Nullable を有効化すること。ImplicitUsings は無効化すること。アクセス修飾子は internal をデフォルトとし、最小に絞ること。
-   15. コードのコンパイルや実行に .csproj 側の設定（例: TargetFramework, UseWindowsForms, SupportedOSPlatformVersion, プラットフォーム依存パッケージ参照など）が必須な場合は、プログラムの冒頭コメントにその旨を明記すること。
-   16. コレクションの契約は必ずインタフェース型（IReadOnlyList<T>, IEnumerable<T> など）で表現すること。Arg や Chapter の契約において、List<T> や配列 (T[]) といった具象型を直接公開してはならない。
-   17. null 合体演算子（?? / ??=）を使用する場合、両辺は**契約型に揃える**こと。List<T> と T[] を混在させてはならない。
-   18. 空のデフォルト値にはキャッシュされた静的定数を使うこと。例: private static readonly IReadOnlyList<T> Empty = Array.Empty<T>(); public IReadOnlyList<T> Values => _values ?? Empty;  
-   19. バッキングフィールドの型は契約型と完全に一致させること。例: private IReadOnlyList<T>? _points;   // List<T>? ではなく  
-   20. ミュータブルな入力（例: SetNormalizedPoints）を受け取る場合、受け取り側は IEnumerable<T> など広く受け入れてよい。ただし内部保存は契約型に揃えること。コピーするか否かの方針は明示的にコメントに記載すること（RULE #11）。
-   21. タプル要素の名前は型の同一性には影響しないが、コードベース内で一貫させること（例: (double x, double y) を推奨）。
-   22.（上位原則・不可侵）データに破壊的な変更を行わない（No Destructive Changes）。既存データの削除・上書き・不可逆変換は既定で禁止。必要な場合は「別名への新規作成」＋「明示フラグ」＋「事前検証」を必須とする。
-   23.（上位原則・入力防御）外部から与えられる全入力（CLI引数、環境変数、ファイル名、パス、URL、JSON、テンプレート文字列など）はセキュリティ観点で必ずサニタイズ／バリデーションを行う（allowlist 方式を優先、denylist は補助）。
-   24.（上位原則・最小特権）処理に必要な最小権限のみを使用する（ファイル権限、ネットワーク、認証情報）。昇格や広い権限が必要な場合は、その根拠をコメントに明記（RULE #12/#11 に従いインラインで理由を残す）。
-   25.（上位原則・可観測性）ログは秘匿情報を含めず、再現に必要な最小限のメタ情報のみを構造化形式で残す（PII/資格情報は常にマスク）。
-   26.（上位原則・既定は安全）既定値は常に「安全側」に倒す（外部送信しない／上書きしない／実行しない）。利便性のために安全側を緩める場合は、明示的なフラグとコメントで根拠を示す（RULE #11）。
-   27.（入力バリデーション）パラメータは型・範囲・サイズ・形式（正規表現）を検証し、未指定・空・制御文字・改行・NULL バイトを拒否する。パスは GetFullPath で正規化し、必ずベースディレクトリ配下かを StartsWith で検査。シンボリックリンクや再解析ポイントは許可しない。
-   28.（出力エンコード）外部へ出す文字列はシンクに応じて必ずエンコード／エスケープ（HTML/CSV/JSON/シェル引数）。文字列連結でコマンドやクエリを組み立てない。コマンド実行は UseShellExecute=false、引数は配列で分離。SQL/検索クエリ等は常にパラメータ化／プリペアド。
-   29.（ファイルI/Oの安全化）ファイル書き込みは上書き禁止（FileMode.CreateNew）。一時ファイルに書き込み、検証後に原子的 Move（上書き不可）。対象拡張子／最大サイズに上限を設ける。FileShare は最小で開く（読み: Read、書き: None）。
-   30.（ネットワークの安全化）デフォルトで外部送信禁止。必要な場合のみドメイン allowlist＋TLS（≥1.2）＋証明書検証有効。全リクエストにタイムアウト／リトライ（指数バックオフ）／CancellationToken を設定。リダイレクトとプロキシの扱いを明示。
-   31.（直列化/逆直列化）BinaryFormatter 等の危険APIは禁止。System.Text.Json を用い、MaxDepth を設定、既知の型にバインド。ポリモーフィックな任意型解決や Type 名埋め込みは使わない。
-   32.（秘密情報）APIキー・トークン・接続文字列をソースに埋め込まない。取得は注入インタフェースや OS セキュアストア経由。例外・ログに秘匿情報を出さない（マスク／要約）。
-   33.（暗号/乱数）セキュリティ用途の乱数は Random ではなく RandomNumberGenerator を使用。独自暗号は禁止。標準ライブラリのみ使用。
-   34.（並行性/リソース）長時間処理は定期的にキャンセルを確認。IDisposable は using で確実に破棄。ロック範囲は最小化し、I/O／ユーザコードの呼び出しはロック外で行う（既存の RunAll 実装に準拠）。
-   35.（確認フロー）破壊的になり得る操作（重名出力、削除、移動）は二段階確認とする：Dry-run（検出のみ）→ Confirm フラグで実行。可能なら成果物は別ディレクトリ／バージョニングされたパスに出力。
-   36.（テスト可能性）安全性ルールを守るためのユニットテストを用意（例：ディレクトリトラバーサル拒否、上書き禁止、例外時のロールバック保証、エンコード適用）。生成AIがコードを変更してもテストがガードする構成にする。
-   37.（AI/自動生成対策）上記ルールに反するコード片（Process.Start のシェル連結、FileMode.Create、未検証パス等）を“禁止パターン”としてコメントに明記し、代替の安全テンプレートをすぐ下に置く（RULE #11）。レビュー時はまず禁止パターン検索から始める。
-   38.（失敗時の挙動）失敗は静かに握りつぶさない。ユーザ向けには安全なメッセージ、ログには再現可能な最小情報を残し、中断かフォールバックかの方針を Chapter ごとに明示（RULE #12 と一貫）。
-   39.（デフォルト設定の固定）外部送信=無効、上書き=無効、実行=無効、インタラクティブ確認=必要、を既定とし、解除には明示的なフラグ名（例：--allow-overwrite, --allow-network）を必須とする。
-   40. UX も考慮すること。数値・日付・時刻は現在のロケールに従ってフォーマット（例: ToString("N", CultureInfo.CurrentCulture)）。ログ/プログラム的出力はカルチャ非依存（例: 日付は ISO 8601）。エラーメッセージやユーザー向け文字列はローカライズ／翻訳ポリシーに従うこと。
-   41. コード中のコメント、以下のチャット出力はすべて日本語で記述すること。テンプレも日本語で記述すること。
-   42.（CLI フラグ規約・固定・ただし要件上不要なものは省略可）
-       --dry-run（既定=true）/ --confirm（実行許可）
-       --allow-overwrite / --allow-network / --allow-exec
-       出力衝突時は --allow-overwrite が無ければ失敗。安全既定は常に維持する（#39）。
-   43.（禁止パターン最小セット・抜粋）
-       - Process.Start(string) でのシェル連結／UseShellExecute=true
-       - FileMode.Create / FileShare.ReadWrite の使用
-       - 未検証パスの使用（GetFullPath/StartsWith 検査なし）
-       - BinaryFormatter 等の危険直列化／任意型バインド
-       - セキュリティ用途に Random を使用
-       - 例外/ログに絶対パス・トークン等の秘匿情報を出力
-   44.（.csproj 既定スケルトン）
-       既定: 
-         <TargetFramework>net8.0</TargetFramework>
-         <Nullable>enable</Nullable>
-         <ImplicitUsings>disable</ImplicitUsings>
-        <EnableImplicitProgram>false</EnableImplicitProgram>
-         <NoWarn>$(NoWarn);IDE0130</NoWarn>
-       この既定を前提にコードを生成する。外す場合はコメントで明示する。
-   45.（RULE 保存方針）
-       RULE ブロックは `#if VERYVIBE_RULES` で残すか、別ファイル（ChapterVibe.RULES.md 等）へ切り出して保存してよい。生成後に完全削除する場合は、SSoT の所在を別コメントで必ず示す。
+// End: ChapterVibe.UsageExample（RULE準拠・XMLコメント付）
+// ============================================================================
+```
+## 4.ソースコード生成上のその他のルール
+   1.（上位原則・不可侵）データに破壊的な変更を行わない（No Destructive Changes）。既存データの削除・上書き・不可逆変換は既定で禁止。必要な場合は「別名への新規作成」＋「明示フラグ」＋「事前検証」を必須とする。
+
+   2.（上位原則・入力防御）外部から与えられる全入力（CLI引数、環境変数、ファイル名、パス、URL、JSON、テンプレート文字列など）はセキュリティ観点で必ずサニタイズ／バリデーションを行う（allowlist 方式を優先、denylist は補助）。
+
+   3.（上位原則・最小特権）処理に必要な最小権限のみを使用する（ファイル権限、ネットワーク、認証情報）。昇格や広い権限が必要な場合は、その根拠をコメントに明記（RULE #12/#11 に従いインラインで理由を残す）。
+
+   4.（上位原則・可観測性）ログは秘匿情報を含めず、再現に必要な最小限のメタ情報のみを構造化形式で残す（PII/資格情報は常にマスク）。
+
+   5.（上位原則・既定は安全）既定値は常に「安全側」に倒す（外部送信しない／上書きしない／実行しない）。利便性のために安全側を緩める場合は、明示的なフラグとコメントで根拠を示す（RULE #11）。
+
+   6.（入力バリデーション）パラメータは型・範囲・サイズ・形式（正規表現）を検証し、未指定・空・制御文字・改行・NULL バイトを拒否する。パスは GetFullPath で正規化し、必ずベースディレクトリ配下かを StartsWith で検査。シンボリックリンクや再解析ポイントは許可しない。
+
+   7.（出力エンコード）外部へ出す文字列はシンクに応じて必ずエンコード／エスケープ（HTML/CSV/JSON/シェル引数）。文字列連結でコマンドやクエリを組み立てない。コマンド実行は UseShellExecute=false、引数は配列で分離。SQL/検索クエリ等は常にパラメータ化／プリペアド。
+
+   8.（ファイルI/Oの安全化）ファイル書き込みは上書き禁止（FileMode.CreateNew）。一時ファイルに書き込み、検証後に原子的 Move（上書き不可）。対象拡張子／最大サイズに上限を設ける。FileShare は最小で開く（読み: Read、書き: None）。
+
+   9.（ネットワークの安全化）デフォルトで外部送信禁止。必要な場合のみドメイン allowlist＋TLS（≥1.2）＋証明書検証有効。全リクエストにタイムアウト／リトライ（指数バックオフ）／CancellationToken を設定。リダイレクトとプロキシの扱いを明示。
+
+   10.（直列化/逆直列化）BinaryFormatter 等の危険APIは禁止。System.Text.Json を用い、MaxDepth を設定、既知の型にバインド。ポリモーフィックな任意型解決や Type 名埋め込みは使わない。
+
+   11.（秘密情報）APIキー・トークン・接続文字列をソースに埋め込まない。取得は注入インタフェースや OS セキュアストア経由。例外・ログに秘匿情報を出さない（マスク／要約）。
+
+   12.（暗号/乱数）セキュリティ用途の乱数は Random ではなく RandomNumberGenerator を使用。独自暗号は禁止。標準ライブラリのみ使用。
+
+   13.（並行性/リソース）長時間処理は定期的にキャンセルを確認。IDisposable は using で確実に破棄。ロック範囲は最小化し、I/O／ユーザコードの呼び出しはロック外で行う（既存の RunAll 実装に準拠）。
+
+   14.（確認フロー）破壊的になり得る操作（重名出力、削除、移動）は二段階確認とする：Dry-run（検出のみ）→ Confirm フラグで実行。可能なら成果物は別ディレクトリ／バージョニングされたパスに出力。
+
+   15.（テスト可能性）安全性ルールを守るためのユニットテストを用意（例：ディレクトリトラバーサル拒否、上書き禁止、例外時のロールバック保証、エンコード適用）。生成AIがコードを変更してもテストがガードする構成にする。
+
+   16.（AI/自動生成対策）上記ルールに反するコード片（Process.Start のシェル連結、FileMode.Create、未検証パス等）を“禁止パターン”としてコメントに明記し、代替の安全テンプレートをすぐ下に置く（RULE #11）。レビュー時はまず禁止パターン検索から始める。
+
+   17.（失敗時の挙動）失敗は静かに握りつぶさない。ユーザ向けには安全なメッセージ、ログには再現可能な最小情報を残し、中断かフォールバックかの方針を Chapter ごとに明示（RULE #12 と一貫）。
+
+   18.（デフォルト設定の固定）外部送信=無効、上書き=無効、実行=無効、インタラクティブ確認=必要、を既定とし、解除には明示的なフラグ名（例：--allow-overwrite, --allow-network）を必須とする。
+
+   19. インタフェース定義は対応する Chapter の直前に置くこと。
+
+   20. 各インタフェースメンバには明確な XML コメントを記述すること。
+
+   21. 実行時引数は RootArg 1つに統一すること。
+
+   22. RootArg ではすべての役割インタフェースを**明示的に実装**すること（メンバは必ずインタフェース経由でのみアクセスできるようにする）。
+
+   23. 各 Chapter では対応する Arg インタフェース型のみを利用し、他のインタフェースや RootArg にキャストして無関係なメンバにアクセスしないこと。
+
+   24. RootArg を直接参照することは禁止。Setter も含め、必ずインタフェース経由でアクセスすること。
+
+   25. IContextBuffer<out TArg> の out と IChapterContext<in TArg> の in のバリアンスを維持すること。（理由：入力(−)×反変(−)=共変(＋) の符号合成で CS1961 を満たしているため）CS1961 違反を起こさないよう out/in の使用位置を保証すること。
+
+   26. フィールドよりプロパティを優先すること。ただし、内部ロック用や固定コレクションなど従来的用途においては private readonly フィールドの利用を認める。
+
+   27. 設計上の選択が必然ではなくフレームワークの方針による場合は、その旨と意図をインラインコメントに記述し、ChapterVibe 外の文脈（および AI/自動レビュー）でも自己説明的になるようにすること。例: readonly フィールドではなくプロパティを選択する、明示的インタフェース実装、パイプラインやリフレクションのための非標準的な命名/可視性、スレッドセーフ性やアロケーションに関するトレードオフ。
+
+   28. I/O や外部プロセス、環境依存呼び出しなどで発生しうる例外は Chapter 内で処理する。既定では Handle の外へ例外を伝播させない。致命的障害など呼び出し側の判定が必要な場合は、呼び出し元の役割IFに IErrorSink 等の“サニタイズ済みエラーの記録口”を定義し、任意のエラーオブジェクト（例外の要約・構造化メタのみ、PII/スタックを含めない）を記録することで逆伝播させる。例外オブジェクト（Exception）自体を IArg に格納して保持してはならない（RULE #25/#32）。
+
+   29. .NET 8.0 の言語機能を活用すること。Nullable を有効化すること。ImplicitUsings は無効化すること。アクセス修飾子は internal をデフォルトとし、最小に絞ること。
+
+   30. コードのコンパイルや実行に .csproj 側の設定（例: TargetFramework, UseWindowsForms, SupportedOSPlatformVersion, プラットフォーム依存パッケージ参照など）が必須な場合は、プログラムの冒頭コメントにその旨を明記すること。
+
+   31. コレクションの契約は必ずインタフェース型（IReadOnlyList<T>, IEnumerable<T> など）で表現すること。Arg や Chapter の契約において、List<T> や配列 (T[]) といった具象型を直接公開してはならない。
+
+   32. null 合体演算子（?? / ??=）を使用する場合、両辺は**契約型に揃える**こと。List<T> と T[] を混在させてはならない。
+
+   33. 空のデフォルト値にはキャッシュされた静的定数を使うこと。例: private static readonly IReadOnlyList<T> Empty = Array.Empty<T>(); public IReadOnlyList<T> Values => _values ?? Empty;  
+
+   34. バッキングフィールドの型は契約型と完全に一致させること。例: private IReadOnlyList<T>? _points;   // List<T>? ではなく  
+
+   35. ミュータブルな入力（例: SetNormalizedPoints）を受け取る場合、受け取り側は IEnumerable<T> など広く受け入れてよい。ただし内部保存は契約型に揃えること。コピーするか否かの方針は明示的にコメントに記載すること（RULE #11）。
+
+   36. タプル要素の名前は型の同一性には影響しないが、コードベース内で一貫させること（例: (double x, double y) を推奨）。
+
+   37. UX も考慮すること。数値・日付・時刻は現在のロケールに従ってフォーマット（例: ToString("N", CultureInfo.CurrentCulture)）。ログ/プログラム的出力はカルチャ非依存（例: 日付は ISO 8601）。エラーメッセージやユーザー向け文字列はローカライズ／翻訳ポリシーに従うこと。
+
+   38. コード中のコメント、以下のチャット出力はすべて日本語で記述すること。テンプレも日本語で記述すること。
+
+   39. CLIフラグ規約・固定・要件上不要なものは省略可・短縮系は状況に合わせて決定
+
+CLI フラグ規約
+
+| フラグ | 型 | 既定 | 危険度 | ドメイン | 説明 | 依存/排他 |
+|--------|----|------|--------|----------|------|-----------|
+| `--dry-run` | bool | true | safe | core | 実行を抑止（安全側スタート）。既定は常に dry-run モード | 排他: `--execute` |
+| `--plan-only` | bool | false | safe | core | 実行計画を出力するのみ（dry-run強化版）。`--execute`と排他 | 排他: `--execute` |
+| `--execute` | bool | false | dangerous | core | 実際に本番実行を行う（dry-runを強制解除）。「本当にやる」時だけ指定 | 排他: `--dry-run`, `--plan-only`; Alias: `--run-for-your-life` |
+| `--allow-overwrite` | bool | false | risky | filesystem | 既存ファイルや成果物の上書きを許可 | – |
+| `--allow-update` | bool | false | dangerous | database | DB/永続ストアの変更（INSERT/UPDATE/DELETE）を許可。SELECT 等の読み取りは常に可 | – |
+| `--allow-network` | enum(`readonly\|full`) | readonly | risky | network | ネットワークアクセスを許可。省略時は `readonly`（安全側） | – |
+| `--allow-exec` | bool | false | dangerous | exec | 外部プロセス・スクリプト実行を許可 | – |
+| `--no-admin` / `--allow-admin` | bool | no-admin | dangerous | privilege | 管理者権限での実行を禁止（既定）。`--allow-admin` を明示した場合のみ許可 | – |
+| `--scope-dir=<PATH>` | string (multi) | （なし） | safe | filesystem | 触れてよいローカルFSルートを制限（chroot 的）。複数可。相対パス/.. 跨ぎ禁止 | – |
+| `--scope-db=<NAME or DSN>` | string (multi) | （なし） | safe | database | アクセス許可するDB名/接続先を限定。例: `--scope-db=Main` | – |
+| `--tenant=<TENANT-ID>` | string | （未指定不可） | safe | tenancy | マルチテナント環境の明示スコープ。指定必須 | – |
+| `--max-concurrency=<N>` | int | 1 | risky | execution | 最大並列数を制御し副作用の暴走を防ぐ | – |
+| `--rate-limit=<OPS/sec>` | int | （なし） | risky | network/api | 外部APIやメール送信などのスロットリング上限 | – |
+| `--secrets-from=<PROVIDER>` | enum(`env\|file\|vault`) | env | risky | secrets | 秘密情報の取得元を制御 | – |
+| `--secrets-allowlist=<KEY1,...>` | list | （なし） | safe | secrets | 参照を許可する秘密キーを制限 | – |
+| `--no-telemetry` / `--telemetry` | bool | no-telemetry | risky | telemetry | 利用状況収集の禁止/許可。PIIは常に収集禁止 | – |
+| `--compliance=<MODE>` | enum(`pci\|hipaa\|none`) | none | safe | compliance | 準拠モードを設定し、ログ/一時ファイルを自動制御 | – |
+| `--deterministic` | bool | false | safe | testing | 乱数/時刻を固定化し再現性を確保。seedは `--seed=<INT>` | – |
+| `--cache[=on\|off]` | bool | on | risky | performance | キャッシュ利用ポリシー。副作用系操作と併用する場合は `off` を推奨 | – |
+| `--retry[=N]` / `--retry-backoff[=ms]` | int | 0 | risky | network/io | 一時エラー時のみ再試行。永続エラー(4xx)は即中断 | – |
+| `--notify=<channel>` | string | stdout | safe | reporting | 実行結果の通知先（stdout/stderr/json/slack/mailなど） | – |
+| `--verbose` | count | 0 | safe | core | ログ詳細度。`-v`, `-vv` などの繰り返し指定で段階的に増加 | – |
+| `--version` | bool | false | safe | core | バージョン情報を表示して終了 | 排他: 他の全フラグ |
+| `--help` | bool | false | safe | core | 使用方法を表示して終了 | 排他: 他の全フラグ |
+
 
 ------（テンプレート）コード生成後にユーザーへ返すチャット出力 -------
 
@@ -951,3 +951,48 @@ namespace ChapterVibe
         }
     }
 }
+ * // --- ユーザー向け ---
+namespace ForUser { class Explanation { public static void Dummy() { 
+
+_ = "ChatGPT とのバイブコーディングで利用する場合は、チャットの冒頭で次のプロンプトを入力することを推奨します。";
+/*
+ - ここから先、このチャットでは私との会話履歴を一切使わずに答えてください。
+ - 会話の中でソースコード改善案を提案する場合は、まずはコード改善案を提示することの許可をユーザーに求めてください。
+*/
+_ = "また、オプショナルですが、次のようなプロンプトを同時に入力することも可能かと思います。（好みに応じて修正）";
+/*
+次のプロンプト以降、内部で3回自己レビューしてから、最終出力+ユーザー側での確認方法＋QAチェック全YES＋セルフレビュー要約3点も出力してください。
+口調は優しいお医者さんが、ユーザーに寄り添って説明するような感じでお願いします。
+*/
+_ = "その後、このファイルをアップロードすると同時に、次のようなプロンプトで「作るもの」の定義をしていきましょう。（下記はあくまで例です。目的に応じて修正）";
+_ = "※ このプロンプトも含め、このプロンプト以降、ChapterVibe_ja-JP.cs をアップロード/更新しながら進めていきます。";
+/*
+ Windows環境上のC#で、パラメータを指定してリサージュ曲線を描き .png ファイルとして保存するコンソールプログラムを書きたいです。
+また、アニメーションgif出力にも対応したいです。
+できるだけ柔軟なプログラムとするためには、どのようなコマンドラインオプションが必要ですか？ 
+--help で表示される Usage 風に、説明部分は日本語で答えてください。
+この .cs ファイルの RULE や手順に従って生成することを想定しています。 
+ */
+_ = "「作るものの定義」準備が整ったら、次のようなプロンプトでコード生成を開始します。";
+_ = "※ このプロンプトも含め、このプロンプト以降、ChapterVibe_ja-JP.cs をアップロード/更新しながら進めていきます。";
+/*
+それでは、このチャットでの今までの会話を参照して、コメント生成手順 1. を実施してください。
+*/
+_ = "ChatGPT が「コピペできない」形で応答してきた場合は、次のようなプロンプトを入力してみてください。";
+/*
+コピペ可能なようにコードブロックで出力してください。
+ */
+_ = "出力の改善を求める場合は、次のようなプロンプトを入力してみてください。";
+/*
+先ほど提案してくれた Usage 風の説明も含めてください。また、コピペ可能なようにコードブロックで出力してください。
+*/
+_ = @"あなたはこのファイルにChatGPTが出力したコメントやコードを貼り付けて、次のプロンプトで
+      更新したファイルを再度アップロードしつつ、「〇〇手順〇を実施してください」とプロンプティングすることで、
+      バイブコーディングを進めることができます。
+      その形で コメント生成手順 1. ～ コメント生成手順 6. を実施し、その後、コード生成手順 1. 以降も順に実施していきます。
+      コード生成手順 5. は、ChatGPTが「対象なし」を出力するまで繰り返し実施します。
+      各段階でコンパイルエラーや警告が発生した場合は、あなたが修正して GPT にフィードバックするか、
+      必要があれば GPT にスクリーンショットとソースコードを提供し、修正を依頼してください。";
+}}}
+// --- END ユーザー向け ---
+
