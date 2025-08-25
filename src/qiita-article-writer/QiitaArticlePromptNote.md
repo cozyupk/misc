@@ -5,6 +5,7 @@ https://github.com/cozyupk/misc/blob/main/LISENCE.txt
 -->
 
 # Qiita記事清書用プロンプト兼作業ノート
+Qiitaが配布する公式ファイルでは__**ありません**__。
 
 ## 生成AIへの指示
 
