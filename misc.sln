@@ -63,11 +63,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prototype20250823", "protot
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.ja_JP", "src\enterprise-boot-camp-framework-for-generative-AIs\protorype20250823\Core.ja_JP\Core.ja_JP.csproj", "{E27FB6E7-DEA4-47C0-9378-C8DB5018E81A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "91_qiita_prompt", "91_qiita_prompt", "{41C33AED-2BCE-4412-802E-AA090D668A4F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "91_paperback-writer", "91_paperback-writer", "{41C33AED-2BCE-4412-802E-AA090D668A4F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prototype20250826", "prototype20250826", "{AF45BA9B-A21E-4F5F-B602-DAE1BC065ADF}"
 EndProject
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "QiitaArticleWriter", "src\qiita-article-writer\QiitaArticleWriter.vbproj", "{63C2636D-D728-3997-99AD-0BA123204780}"
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "PaperbackWriter", "src\paperback-writer\PaperbackWriter.vbproj", "{6B9580CF-63A5-AC94-1B50-BA156EA15F17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -139,10 +139,10 @@ Global
 		{E27FB6E7-DEA4-47C0-9378-C8DB5018E81A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E27FB6E7-DEA4-47C0-9378-C8DB5018E81A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E27FB6E7-DEA4-47C0-9378-C8DB5018E81A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{63C2636D-D728-3997-99AD-0BA123204780}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{63C2636D-D728-3997-99AD-0BA123204780}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{63C2636D-D728-3997-99AD-0BA123204780}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{63C2636D-D728-3997-99AD-0BA123204780}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B9580CF-63A5-AC94-1B50-BA156EA15F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B9580CF-63A5-AC94-1B50-BA156EA15F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B9580CF-63A5-AC94-1B50-BA156EA15F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B9580CF-63A5-AC94-1B50-BA156EA15F17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -167,7 +167,7 @@ Global
 		{1E7C23A7-E0C7-4BE2-91AE-FABCD7ECB89F} = {5F75F586-CEF1-41B8-9CF4-75104E1E2C34}
 		{E27FB6E7-DEA4-47C0-9378-C8DB5018E81A} = {1E7C23A7-E0C7-4BE2-91AE-FABCD7ECB89F}
 		{AF45BA9B-A21E-4F5F-B602-DAE1BC065ADF} = {41C33AED-2BCE-4412-802E-AA090D668A4F}
-		{63C2636D-D728-3997-99AD-0BA123204780} = {AF45BA9B-A21E-4F5F-B602-DAE1BC065ADF}
+		{6B9580CF-63A5-AC94-1B50-BA156EA15F17} = {AF45BA9B-A21E-4F5F-B602-DAE1BC065ADF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09699C21-ED43-4667-9AE5-723807C00338}
